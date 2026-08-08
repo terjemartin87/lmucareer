@@ -588,6 +588,47 @@ Målet var at en kompis skal kunne laste ned én fil, kjøre den, og være klar.
 * Ingen oppdateringssjekk mot GitHub Releases - reint fremtidig arbeid, ingen avhengigheter
   bygget for det ennå.
 
+### Etterjustering etter Fase 7 ✅ Ferdig
+
+Finpuss basert på tilbakemelding etter første installer-test:
+
+* **`WelcomeWindow`**: ny velkomstskjerm som møter deg ved oppstart i stedet for å hoppe
+  rett til Dashboard - logo (samme ikon som app-ikonet), "LMU KARRIERE"-tittel, en kort
+  quote, LMU-visningsnavn og Results-mappe. Kjenner igjen en returnerende fører (sjekker om
+  det finnes en karrierefil for navnet du skriver inn) og bytter hovedknappen til
+  **"Fortsett karriere"** med en "Velkommen tilbake"-hilsen, ellers **"Start karriere"**.
+  Fullfører du skjemaet, opprettes `MainWindow` og overvåking starter automatisk - ingen
+  ekstra klikk i Innstillinger-fanen etterpå.
+* **`Microsoft.Win32.OpenFolderDialog`**: ekte mappevelger for Results-mappen (både på
+  velkomstskjermen og i Innstillinger-fanen), i stedet for bare en forhåndsutfylt tekstboks
+  du måtte redigere manuelt.
+* **`WindowState="Maximized"`**: MainWindow åpnes fullskjerm-i-vindu som standard.
+* **`ManufacturerInterestWindow`**: en ny, alltid-tilgjengelig "🔍 Sjekk merkeinteresse"-knapp
+  (i Hjelp-fanen) viser hvilke merker som er interessert i deg *akkurat nå* - samme
+  beregning som brukes ved faktisk signering, bare uten en Signer-knapp. Legger til rette
+  for spørsmålet "hvor kommer tilbud fra?": **tilbud genereres kun på to faste tidspunkt**
+  (ny karriere og sesongslutt) ut fra Rating, forrige sesongs form og renhet - ikke
+  løpende midt i en sesong. Se hele forklaringen i Hjelp-fanen.
+* **Ny "❓ Hjelp"-fane**: full how-to-play-guide - hva verktøyet faktisk gjør, steg-for-steg
+  hvordan sette opp et løp (inkl. hvorfor det må være Race Weekend og ikke Multiplayer),
+  hva du gjør hvis oppsettet ikke stemmer, og en kort forklaring av XP/poeng/Rating/
+  Credits/kontrakter. Dashboard fikk også en statuslinje over live-loggen ("Overvåker
+  Results-mappen...") pluss en direkte lenke til Hjelp-fanen.
+* **Installer-språkbug fikset**: å velge English i installer-dialogen ga likevel norsk tekst
+  for skrivebordsikon-beskrivelsen og avinstalleringsdialogen, fordi de var hardkodet i
+  Pascal-koden i stedet for deklarert som `[CustomMessages]` med egen variant per språk.
+  Fikset til å bruke `CustomMessage()`/`{cm:...}` konsekvent, inkludert Inno sine egne
+  innebygde oversettelser (`{cm:AdditionalIcons}`, `{cm:UninstallProgram,...}`) der de
+  finnes i stedet for å finne opp nye strenger.
+
+**Verifisert:** installer rebygd og testet på nytt (silent install med `/LANG=english`,
+bekreftet ren installasjon og avinstallering). Appen startet fra kaldstart uten
+karrierefiler fra før, viste velkomstskjermen uten å krasje. Selve den visuelle
+gjengivelsen (layout, om "Fortsett karriere" faktisk endrer seg riktig når du skriver inn
+et kjent navn, om engelsk tekst faktisk vises i installer-dialogen) er ikke bekreftet med
+øynene - samme vedvarende begrensning som resten av UI-arbeidet: ingen
+desktop-GUI-automatisering tilgjengelig i denne sandkassen.
+
 ### Fase 8 – Tester og vedlikehold 🟢
 
 * `LmuCareerTool.Tests` (xUnit) med ekte resultat-XML-er som fixtures.

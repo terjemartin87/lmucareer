@@ -21,4 +21,8 @@
     <ProjectReference Include="..\LmuCareerTool.Core\LmuCareerTool.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Assets\app-icon-512.png" />
+  </ItemGroup>
+
 </Project>

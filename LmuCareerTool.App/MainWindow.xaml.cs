@@ -46,12 +46,31 @@ public partial class MainWindow : Window
             NavSettings.IsChecked = true; // ingen tidligere oppsett - start på Innstillinger i stedet for et tomt Dashboard
     }
 
+    /// <summary>Brukes av WelcomeWindow - fyller ut oppsettet og starter overvåking med det
+    /// samme, slik at man ikke må gjenta seg selv med et ekstra klikk i Innstillinger-fanen.</summary>
+    public MainWindow(string resultsFolder, string playerName) : this()
+    {
+        ResultsFolderBox.Text = resultsFolder;
+        PlayerNameBox.Text = playerName;
+        StartWatching();
+    }
+
     private void StartStopButton_Click(object sender, RoutedEventArgs e)
     {
         if (_watcher == null)
             StartWatching();
         else
             StopWatching();
+    }
+
+    private void BrowseResultsFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Velg LMU Results-mappe" };
+        if (Directory.Exists(ResultsFolderBox.Text))
+            dialog.InitialDirectory = ResultsFolderBox.Text;
+
+        if (dialog.ShowDialog(this) == true)
+            ResultsFolderBox.Text = dialog.FolderName;
     }
 
     private void StartWatching()
@@ -120,6 +139,7 @@ public partial class MainWindow : Window
         StatusText.Text = $"Overvåker: {resultsFolder}";
         Log("Venter på nye løpsresultater...");
         ShowToast("🏁", "Overvåking startet - klar for løp!", "AccentColor");
+        SetDashboardStatus("🟢", "Overvåker Results-mappen. Kjør et løp i LMU (Race Weekend) - resultatet dukker opp her automatisk når det er ferdig.");
 
         NavDashboard.IsChecked = true;
     }
@@ -128,6 +148,7 @@ public partial class MainWindow : Window
     {
         _watcher?.Dispose();
         _watcher = null;
+        SetDashboardStatus("⏸", "Overvåking stoppet. Trykk Start overvåking i Innstillinger for å fortsette.");
 
         ResultsFolderBox.IsEnabled = true;
         PlayerNameBox.IsEnabled = true;
@@ -273,9 +294,27 @@ public partial class MainWindow : Window
         SeasonPanel.Visibility = ReferenceEquals(sender, NavSeason) ? Visibility.Visible : Visibility.Collapsed;
         ChampionshipPanel.Visibility = ReferenceEquals(sender, NavChampionship) ? Visibility.Visible : Visibility.Collapsed;
         HistoryPanel.Visibility = ReferenceEquals(sender, NavHistory) ? Visibility.Visible : Visibility.Collapsed;
+        HelpPanel.Visibility = ReferenceEquals(sender, NavHelp) ? Visibility.Visible : Visibility.Collapsed;
         SettingsPanel.Visibility = ReferenceEquals(sender, NavSettings) ? Visibility.Visible : Visibility.Collapsed;
 
         if (ReferenceEquals(sender, NavChampionship)) RefreshChampionship();
+    }
+
+    private void HelpLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        NavHelp.IsChecked = true;
+    }
+
+    private void CheckInterestButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv karriere", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new ManufacturerInterestWindow(_engine) { Owner = this };
+        window.ShowDialog();
     }
 
     private void AvatarBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -426,6 +465,12 @@ public partial class MainWindow : Window
             var detailWindow = new RaceDetailWindow(row.Entry) { Owner = this };
             detailWindow.ShowDialog();
         }
+    }
+
+    private void SetDashboardStatus(string icon, string message)
+    {
+        StatusIcon.Text = icon;
+        DashboardStatusText.Text = message;
     }
 
     private void ShowToast(string icon, string message, string accentBrushKey)

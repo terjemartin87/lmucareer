@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="LMU Karriere" Height="860" Width="1400" MinHeight="640" MinWidth="1080"
+        WindowState="Maximized"
         Background="{StaticResource BgColor}"
         FontFamily="Segoe UI">
     <Grid>
@@ -39,6 +40,8 @@
                                      Content="🏆  Mesterskap" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavHistory" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
                                      Content="📜  Historikk" Checked="Nav_Checked" />
+                        <RadioButton x:Name="NavHelp" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
+                                     Content="❓  Hjelp" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavSettings" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
                                      Content="⚙  Innstillinger" Checked="Nav_Checked" />
                     </StackPanel>
@@ -156,7 +159,22 @@
 
                                 <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                                     <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="LIVE-LOGG" Style="{StaticResource SectionHeaderStyle}" />
+                                        <Grid DockPanel.Dock="Top">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="LIVE-LOGG" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Grid.Column="1" Text="❓ Hvordan fungerer dette?" Foreground="{StaticResource AccentBlue}"
+                                                       FontSize="12" Cursor="Hand" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" />
+                                        </Grid>
+                                        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceColor}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="StatusIcon" Text="⏳" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                                <TextBlock x:Name="DashboardStatusText" Text="Fyll ut oppsett og trykk Start for å komme i gang."
+                                                           Foreground="{StaticResource MutedTextColor}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
                                         <ListBox x:Name="LogListBox" Background="Transparent" BorderThickness="0" Foreground="{StaticResource MutedTextColor}"
                                                  FontFamily="Consolas" FontSize="12" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
                                     </DockPanel>
@@ -286,6 +304,93 @@
                             </Border>
                         </Grid>
 
+                        <!-- HJELP -->
+                        <Grid x:Name="HelpPanel" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="HVA ER DETTE?" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock TextWrapping="Wrap">
+                                                LMU Karriere styrer <Run FontFamily="Segoe UI Semibold">ikke</Run> spillet - det kan ikke sette opp Race Weekend for deg.
+                                                I stedet forteller det deg nøyaktig hva du skal sette opp (bane, bil, format, vær), du kjører løpet
+                                                manuelt i LMU, og verktøyet oppdager automatisk resultatfilen etterpå og oppdaterer karrieren din:
+                                                XP, poeng, mesterskapstabell, Rating, Credits og kontrakter.
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="SLIK SETTER DU OPP ET LØP" Style="{StaticResource SectionHeaderStyle}" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
+                                                    <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
+                                                </Border>
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="I LMUs hovedmeny: velg 'Race Weekend' - IKKE Multiplayer. Kun Race Weekend bruker spillets faste WEC-startliste, som gjør et ekte mesterskap med faste rivaler mulig. Multiplayer-løp blir logget, men teller aldri mot karrieren." />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
+                                                    <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
+                                                </Border>
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Match 'Neste løp'-kortet på Dashboard nøyaktig: klasse, bil (merket krever EN spesifikk bil for hele sesongen), bane og vær. Bruk 'Kopier oppskrift'-knappen for å ha alt ved siden av deg mens du setter opp." />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
+                                                    <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
+                                                </Border>
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Kjør Practice/Qualifying/Race som normalt - antall AI-motstandere styres av spillets egne baneinnstillinger, ikke av verktøyet." />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Background="{StaticResource GoodColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
+                                                    <TextBlock Text="4" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#FF0B0D12" />
+                                                </Border>
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Ferdig! Så snart løpet er over, oppdager verktøyet den nye resultatfilen automatisk - du trenger ikke gjøre noe mer. Sjekk live-loggen på Dashboard." />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="HVIS OPPSETTET IKKE STEMMER" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock TextWrapping="Wrap">
+                                                Kjørte du feil bane eller feil bil for sesongrunden? Verktøyet varsler deg med et gult ikon i loggen
+                                                og et popup-vindu der du kan velge å <Run FontFamily="Segoe UI Semibold">godkjenne runden likevel</Run> -
+                                                din egen karriere, dine egne regler. Sier du nei, kan du bare kjøre runden på nytt med riktig oppsett.
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="SYSTEMENE, KORT FORKLART" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentColor}">XP og Nivå</Run> - tjent per fullført sesongrunde. Nok XP låser opp nye klasser (GT3 → LMP3 → LMP2 → Hypercar).</TextBlock>
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource GoodColor}">Sesongpoeng</Run> - F1-poengskala (25-18-15...) per plassering. Din egen sammenlagtsum for sesongen, vist i Mesterskap-fanen sammen med resten av feltet.</TextBlock>
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentBlue}">Rating</Run> - stiger av gode og rene resultater (0-100, start 50). Avgjør hvor interessert et merke er i deg.</TextBlock>
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentGold}">Credits</Run> - spillvaluta tjent per løp + kontraktlønn. Brukes til bruddsummer og betalte privatlag-seter - aldri til å kjøpe deg en fabrikkontrakt du ikke har fortjent.</TextBlock>
+                                            <TextBlock TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold">Kontrakter</Run> - se eget avsnitt under.</TextBlock>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="TRANSFER-MARKEDET - HVOR KOMMER TILBUD FRA?" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                                Merkene sender IKKE tilbud midt i en sesong - de vurderer deg på to faste tidspunkt: når du starter en helt ny karriere, og hver gang en sesong er fullført. Hvert merke regner ut en interesse-score fra Rating din (mot merkets krav), hvordan forrige sesong gikk, og hvor rent du kjørte. Er du mer enn 10 Rating-poeng under kravet, vurderer de deg ikke i det hele tatt ennå.
+                                            </TextBlock>
+                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                                                Har du allerede kontrakt med et merke og innfridde forrige sesongmål, får du en fornyelse i stedet for et nytt tilbud. Innfrir du IKKE målet, kan merket si deg opp. Uansett hvor dårlig det går, finnes alltid et betalt sete hos et privatlag som fallback (mot en engangskostnad, ingen lønn).
+                                            </TextBlock>
+                                            <Button x:Name="CheckInterestButton" Content="🔍 Sjekk merkeinteresse akkurat nå" HorizontalAlignment="Left"
+                                                    Style="{StaticResource SecondaryButtonStyle}" Click="CheckInterestButton_Click" />
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
                         <!-- INNSTILLINGER -->
                         <Grid x:Name="SettingsPanel" Visibility="Collapsed">
                             <Border Style="{StaticResource CardStyle}" VerticalAlignment="Top">
@@ -299,7 +404,15 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                             <TextBlock Text="LMU Results-mappe" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
-                                            <TextBox x:Name="ResultsFolderBox" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
+                                                <Button Grid.Column="1" Content="Bla gjennom..." Style="{StaticResource SecondaryButtonStyle}"
+                                                        Padding="10,8" Click="BrowseResultsFolderButton_Click" />
+                                            </Grid>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Margin="0,0,10,0">
                                             <TextBlock Text="Ditt LMU-visningsnavn" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />

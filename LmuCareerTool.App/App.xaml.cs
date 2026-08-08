@@ -11,6 +11,12 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
     }
 
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+        new WelcomeWindow().Show();
+    }
+
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         MessageBox.Show(e.Exception.ToString(), "Uventet feil (UI-tråd)", MessageBoxButton.OK, MessageBoxImage.Error);

@@ -27,24 +27,34 @@ SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesInstallIn64BitMode=x64compatible
+ShowLanguageDialog=yes
 
 [Languages]
 Name: "norwegian"; MessagesFile: "compiler:Languages\Norwegian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+; Egendefinert tekst (utenom Inno sine egne innebygde meldinger, som allerede er korrekt
+; oversatt av MessagesFile over) MÅ deklareres per språk her - ellers vises den alltid på
+; samme språk uansett hva brukeren velger i språkdialogen, siden det bare er ren tekst.
+[CustomMessages]
+english.DesktopIconDescription=Create a desktop shortcut
+english.KeepDataQuestion=Do you also want to delete your career data?%n%1%n%nChoose No to keep it for next time you install.
+norwegian.DesktopIconDescription=Opprett snarvei på skrivebordet
+norwegian.KeepDataQuestion=Vil du også slette karrieredataene dine?%n%1%n%nVelg Nei for å beholde dem til neste gang du installerer.
+
 [Tasks]
-Name: "desktopicon"; Description: "Opprett snarvei på skrivebordet"; GroupDescription: "Snarveier:"
+Name: "desktopicon"; Description: "{cm:DesktopIconDescription}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\Avinstaller {#MyAppName}"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Start {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -58,8 +68,7 @@ begin
     DataDir := ExpandConstant('{localappdata}\LmuCareerTool');
     if DirExists(DataDir) then
     begin
-      if MsgBox('Vil du også slette karrieredataene dine?' + #13#10 + DataDir + #13#10#13#10 +
-                'Velg Nei for å beholde dem til neste gang du installerer.',
+      if MsgBox(FmtMessage(CustomMessage('KeepDataQuestion'), [DataDir]),
                 mbConfirmation, MB_YESNO) = IDYES then
         DelTree(DataDir, True, True, True);
     end;
