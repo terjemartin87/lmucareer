@@ -23,7 +23,7 @@ public class CareerStore
         if (File.Exists(_filePath))
         {
             var json = File.ReadAllText(_filePath);
-            var loaded = JsonSerializer.Deserialize<CareerProfile>(json);
+            var loaded = JsonSerializer.Deserialize<CareerProfile>(json, JsonOptions);
             if (loaded != null) return loaded;
         }
 

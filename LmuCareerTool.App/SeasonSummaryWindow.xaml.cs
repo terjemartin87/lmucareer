@@ -8,10 +8,11 @@ namespace LmuCareerTool.App;
 public partial class SeasonSummaryWindow : Window
 {
     private readonly CareerEngine _engine;
-    private string? _selectedManufacturer;
+    private List<ManufacturerRowVm> _manufacturerRows = new();
+    private string? _preferredManufacturer;
 
     public string SelectedClass { get; private set; } = "";
-    public string? SelectedManufacturer => _selectedManufacturer;
+    public string? SelectedManufacturer => _manufacturerRows.FirstOrDefault(r => r.IsSelected)?.Name;
 
     public SeasonSummaryWindow(SeasonModel? completedSeason, CareerEngine engine)
     {
@@ -32,6 +33,8 @@ public partial class SeasonSummaryWindow : Window
             ResultsBorder.Visibility = Visibility.Collapsed;
         }
 
+        _preferredManufacturer = engine.Career.CurrentManufacturer;
+
         ClassComboBox.ItemsSource = engine.Career.UnlockedClasses;
         ClassComboBox.SelectedItem = engine.Career.UnlockedClasses.Contains(engine.Career.CurrentClass)
             ? engine.Career.CurrentClass
@@ -48,44 +51,32 @@ public partial class SeasonSummaryWindow : Window
 
     private void RefreshManufacturerList(string carClass)
     {
+        // Husk hva som var valgt før vi bygger listen på nytt (f.eks. etter et kjøp).
+        var previouslySelected = SelectedManufacturer ?? _preferredManufacturer;
+
         var manufacturers = _engine.GetManufacturersForClass(carClass);
 
         if (manufacturers.Count == 0)
         {
             ManufacturerList.Visibility = Visibility.Collapsed;
             NoManufacturersText.Visibility = Visibility.Visible;
-            _selectedManufacturer = null;
+            _manufacturerRows = new List<ManufacturerRowVm>();
+            ManufacturerList.ItemsSource = null;
             return;
         }
 
         ManufacturerList.Visibility = Visibility.Visible;
         NoManufacturersText.Visibility = Visibility.Collapsed;
 
-        var rows = manufacturers
+        _manufacturerRows = manufacturers
             .Select(m => new ManufacturerRowVm(m, canAfford: _engine.Career.Credits >= m.UnlockCost))
             .ToList();
-        ManufacturerList.ItemsSource = rows;
+        ManufacturerList.ItemsSource = _manufacturerRows;
 
-        // Behold valgt merke hvis fortsatt gyldig/opplåst, ellers velg det du allerede kjører for, ellers første opplåste.
-        var stillValid = rows.FirstOrDefault(r => r.Name == _selectedManufacturer && r.Unlocked);
-        if (stillValid == null)
-        {
-            var preferred = rows.FirstOrDefault(r => r.Name == _engine.Career.CurrentManufacturer && r.Unlocked)
-                             ?? rows.FirstOrDefault(r => r.Unlocked);
-            _selectedManufacturer = preferred?.Name;
-        }
-
-        // Merk riktig RadioButton visuelt ved å bygge listen på nytt (databinding trigger IsEnabled korrekt;
-        // faktisk "checked"-tilstand styres av brukerklikk via ManufacturerRadio_Checked - førstegang settes ingen
-        // radioknapp automatisk merket, så be brukeren klikke hvis feltet er tomt).
-    }
-
-    private void ManufacturerRadio_Checked(object sender, RoutedEventArgs e)
-    {
-        if (sender is RadioButton { Tag: string name })
-        {
-            _selectedManufacturer = name;
-        }
+        // Behold valgt merke hvis fortsatt gyldig/opplåst, ellers det du allerede kjører for, ellers første opplåste.
+        var toSelect = _manufacturerRows.FirstOrDefault(r => r.Name == previouslySelected && r.Unlocked)
+                       ?? _manufacturerRows.FirstOrDefault(r => r.Unlocked);
+        if (toSelect != null) toSelect.IsSelected = true;
     }
 
     private void BuyButton_Click(object sender, RoutedEventArgs e)
@@ -97,7 +88,7 @@ public partial class SeasonSummaryWindow : Window
         {
             MessageBox.Show(this, $"Du er nå signert med {manufacturerName}!", "Kjøp fullført",
                 MessageBoxButton.OK, MessageBoxImage.Information);
-            _selectedManufacturer = manufacturerName;
+            _preferredManufacturer = manufacturerName;
             RefreshManufacturerList(carClass);
         }
         else
@@ -116,7 +107,7 @@ public partial class SeasonSummaryWindow : Window
         }
 
         var manufacturers = _engine.GetManufacturersForClass(selectedClass);
-        if (manufacturers.Count > 0 && string.IsNullOrEmpty(_selectedManufacturer))
+        if (manufacturers.Count > 0 && string.IsNullOrEmpty(SelectedManufacturer))
         {
             MessageBox.Show(this, "Velg et merke (klikk radioknappen ved siden av et opplåst merke) først.",
                 "Mangler valg", MessageBoxButton.OK, MessageBoxImage.Warning);
