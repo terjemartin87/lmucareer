@@ -9,6 +9,7 @@ public class LeagueDriverStandingEntry
     public string Name { get; set; } = "";
     public string TeamName { get; set; } = "";
     public string CarType { get; set; } = "";
+    public string CarClass { get; set; } = "";
     public int Points { get; set; }
     public int Wins { get; set; }
     public int Podiums { get; set; }
@@ -44,10 +45,34 @@ public class LeagueDriverHistory
 /// diskvalifisering) fra verten. Samme grunnprinsipp som Championship/ChampionshipTable for
 /// karrieremodus, men helt uavhengig implementasjon siden ligamodus har straffer og ikke har
 /// et fast "spiller"-perspektiv.
+///
+/// VIKTIG: et hostet ligaløp kan fritt blande klasser i samme race (GT3 sammen med LMP2, LMP3,
+/// Hypercar osv - akkurat som ekte WEC). Poeng regnes derfor ALLTID ut fra sjåførens plassering
+/// INNENFOR egen klasse (ClassPosition), aldri den overordnede løpsplasseringen - ellers ville en
+/// GT3-vinner som krysset mål bak alle Hypercar-ene fått poeng som om han var sist. Alle
+/// standings-metoder tar en valgfri klassefilter; kall GetClassesInSeason for å finne ut hvilke
+/// klasser som faktisk er kjørt i sesongen (én klasse i en enkeltklasse-liga, flere i en
+/// multiklasse-liga).
 /// </summary>
 public static class LeagueStandingsCalculator
 {
-    public static List<LeagueDriverStandingEntry> ComputeDriverStandings(LeagueSeason? season, int? throughRound = null)
+    /// <summary>Alle distinkte klasser som faktisk har kjørt i sesongen, sortert. Tom liste hvis
+    /// resultatfilene ikke inneholder klasseinfo i det hele tatt.</summary>
+    public static List<string> GetClassesInSeason(LeagueSeason? season)
+    {
+        if (season == null) return new List<string>();
+
+        return season.Rounds
+            .SelectMany(r => r.FieldResults)
+            .Select(f => f.CarClass)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public static List<LeagueDriverStandingEntry> ComputeDriverStandings(
+        LeagueSeason? season, string? carClass = null, int? throughRound = null)
     {
         var result = new List<LeagueDriverStandingEntry>();
         if (season == null) return result;
@@ -56,12 +81,8 @@ public static class LeagueStandingsCalculator
 
         foreach (var round in RelevantRounds(season, throughRound))
         {
-            var presentNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var fieldResult in round.FieldResults)
+            foreach (var fieldResult in FilterByClass(round.FieldResults, carClass))
             {
-                presentNames.Add(fieldResult.Name);
-
                 if (!byName.TryGetValue(fieldResult.Name, out var entry))
                 {
                     entry = new LeagueDriverStandingEntry { Name = fieldResult.Name };
@@ -69,27 +90,20 @@ public static class LeagueStandingsCalculator
                 }
 
                 entry.TeamName = fieldResult.TeamName;
-                entry.CarType = fieldResult.CarType;
+                entry.CarClass = fieldResult.CarClass;
                 entry.RoundsCompleted++;
 
-                var (points, penaltyPoints, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.Position);
+                var (points, penaltyPoints, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.ClassPosition);
                 entry.Points += points;
                 entry.PenaltyPointsTotal += penaltyPoints;
 
                 if (!disqualified)
                 {
-                    if (fieldResult.Position == 1) entry.Wins++;
-                    if (fieldResult.Position is >= 1 and <= 3) entry.Podiums++;
-                    if (fieldResult.Position is >= 1 and <= 5) entry.Top5++;
-                    if (fieldResult.Position is >= 1 and <= 10) entry.Top10++;
+                    if (fieldResult.ClassPosition == 1) entry.Wins++;
+                    if (fieldResult.ClassPosition is >= 1 and <= 3) entry.Podiums++;
+                    if (fieldResult.ClassPosition is >= 1 and <= 5) entry.Top5++;
+                    if (fieldResult.ClassPosition is >= 1 and <= 10) entry.Top10++;
                 }
-            }
-
-            // Sjåfører i det låste feltet, men fraværende denne runden: DNS, telles med, 0 poeng.
-            foreach (var rosterName in season.LockedRosterNames.Where(n => !presentNames.Contains(n)))
-            {
-                if (byName.TryGetValue(rosterName, out var dnsEntry))
-                    dnsEntry.RoundsCompleted++;
             }
         }
 
@@ -101,7 +115,7 @@ public static class LeagueStandingsCalculator
     }
 
     public static List<LeagueManufacturerStandingEntry> ComputeManufacturerStandings(
-        LeagueSeason? season, GameContent content, int? throughRound = null)
+        LeagueSeason? season, GameContent content, string? carClass = null, int? throughRound = null)
     {
         var result = new List<LeagueManufacturerStandingEntry>();
         if (season == null) return result;
@@ -115,7 +129,7 @@ public static class LeagueStandingsCalculator
 
         foreach (var round in RelevantRounds(season, throughRound))
         {
-            foreach (var fieldResult in round.FieldResults)
+            foreach (var fieldResult in FilterByClass(round.FieldResults, carClass))
             {
                 var make = carToManufacturer.TryGetValue(fieldResult.CarType, out var mapped) ? mapped : fieldResult.CarType;
                 if (!byMake.TryGetValue(make, out var entry))
@@ -124,16 +138,16 @@ public static class LeagueStandingsCalculator
                     byMake[make] = entry;
                 }
 
-                var (points, _, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.Position);
+                var (points, _, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.ClassPosition);
                 entry.Points += points;
-                if (!disqualified && fieldResult.Position == 1) entry.Wins++;
+                if (!disqualified && fieldResult.ClassPosition == 1) entry.Wins++;
             }
         }
 
         return byMake.Values.OrderByDescending(e => e.Points).ToList();
     }
 
-    /// <summary>Bygger karriere-lang historikk (alle sesonger) for én navngitt sjåfør.</summary>
+    /// <summary>Bygger karriere-lang historikk (alle sesonger, alle klasser) for én navngitt sjåfør.</summary>
     public static LeagueDriverHistory BuildDriverHistory(LeagueProfile league, string driverName)
     {
         var normalized = RosterMatcher.Normalize(driverName);
@@ -149,17 +163,17 @@ public static class LeagueStandingsCalculator
 
             history.TotalRaces++;
 
-            var (points, _, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.Position);
+            var (points, _, disqualified) = ScoreRound(round, fieldResult.Name, fieldResult.ClassPosition);
             history.TotalPoints += points;
 
             if (disqualified) continue;
 
-            if (fieldResult.Position == 1) history.Wins++;
-            if (fieldResult.Position is >= 1 and <= 3) history.Podiums++;
-            if (fieldResult.Position is >= 1 and <= 5) history.Top5++;
-            if (fieldResult.Position is >= 1 and <= 10) history.Top10++;
-            if (history.BestFinish == 0 || fieldResult.Position < history.BestFinish)
-                history.BestFinish = fieldResult.Position;
+            if (fieldResult.ClassPosition == 1) history.Wins++;
+            if (fieldResult.ClassPosition is >= 1 and <= 3) history.Podiums++;
+            if (fieldResult.ClassPosition is >= 1 and <= 5) history.Top5++;
+            if (fieldResult.ClassPosition is >= 1 and <= 10) history.Top10++;
+            if (history.BestFinish == 0 || fieldResult.ClassPosition < history.BestFinish)
+                history.BestFinish = fieldResult.ClassPosition;
         }
 
         return history;
@@ -180,13 +194,19 @@ public static class LeagueStandingsCalculator
             .ToList();
     }
 
-    private static (int points, int penaltyPoints, bool disqualified) ScoreRound(LeagueRound round, string driverName, int position)
+    private static IEnumerable<LmuCareerTool.Models.FieldResultEntry> FilterByClass(
+        IEnumerable<LmuCareerTool.Models.FieldResultEntry> fieldResults, string? carClass) =>
+        string.IsNullOrWhiteSpace(carClass)
+            ? fieldResults
+            : fieldResults.Where(f => string.Equals(f.CarClass, carClass, StringComparison.OrdinalIgnoreCase));
+
+    private static (int points, int penaltyPoints, bool disqualified) ScoreRound(LeagueRound round, string driverName, int classPosition)
     {
         var penalties = round.Penalties.Where(p => RosterMatcher.AreSameDriver(p.DriverName, driverName)).ToList();
         var disqualified = penalties.Any(p => p.Disqualified);
         var penaltyPoints = penalties.Sum(p => p.PointsDeducted);
 
-        var basePoints = disqualified ? 0 : PointsCalculator.PointsForPosition(position);
+        var basePoints = disqualified ? 0 : PointsCalculator.PointsForPosition(classPosition);
         var finalPoints = Math.Max(0, basePoints - penaltyPoints);
 
         return (finalPoints, penaltyPoints, disqualified);

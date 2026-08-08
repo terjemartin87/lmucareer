@@ -37,37 +37,50 @@ public static class LeagueReportHtmlBuilder
             return sb.ToString();
         }
 
+        // Et hostet løp kan blande flere klasser i samme race (GT3, LMP2, LMP3, Hypercar osv,
+        // akkurat som ekte WEC) - hver klasse får derfor sin egen mesterskapstabell, siden poeng
+        // i én klasse ikke er sammenlignbare med poeng i en annen. En enkeltklasse-liga (det
+        // vanlige tilfellet) får rett og slett bare ett sett tabeller uten klasseoverskrift.
+        var classes = LeagueStandingsCalculator.GetClassesInSeason(season);
+        var multiClass = classes.Count > 1;
+
         sb.AppendLine("<div class=\"tiles\">");
         AppendTile(sb, "RUNDER", $"{season.CompletedCount} / {season.Rounds.Count}");
         AppendTile(sb, "STATUS", season.IsComplete ? "Fullført" : "Pågående");
-        var leader = LeagueStandingsCalculator.ComputeDriverStandings(season).FirstOrDefault();
-        AppendTile(sb, "LEDER", leader != null ? $"{Enc(leader.Name)} ({leader.Points}p)" : "-");
+        AppendTile(sb, "KLASSER", classes.Count > 0 ? string.Join(", ", classes) : season.CarClass);
         sb.AppendLine("</div>");
 
-        sb.AppendLine("<h2>Førermesterskap</h2>");
-        sb.AppendLine("<table><tr><th>#</th><th>Fører</th><th>Team</th><th>Poeng</th><th>Seire</th><th>Podier</th><th>Top 5</th><th>Top 10</th><th>Straffepoeng</th></tr>");
-        var driverStandings = LeagueStandingsCalculator.ComputeDriverStandings(season);
-        for (var i = 0; i < driverStandings.Count; i++)
-        {
-            var d = driverStandings[i];
-            sb.AppendLine($"<tr><td>{i + 1}</td><td>{Enc(d.Name)}</td><td>{Enc(d.TeamName)}</td>" +
-                           $"<td>{d.Points}</td><td>{d.Wins}</td><td>{d.Podiums}</td><td>{d.Top5}</td><td>{d.Top10}</td>" +
-                           $"<td>{(d.PenaltyPointsTotal > 0 ? $"-{d.PenaltyPointsTotal}" : "-")}</td></tr>");
-        }
-        sb.AppendLine("</table>");
+        var classFilters = multiClass ? classes.Cast<string?>().ToList() : new List<string?> { null };
 
-        sb.AppendLine("<h2>Merkemesterskap</h2>");
-        sb.AppendLine("<table><tr><th>#</th><th>Merke</th><th>Poeng</th><th>Seire</th></tr>");
-        var makeStandings = LeagueStandingsCalculator.ComputeManufacturerStandings(season, content);
-        for (var i = 0; i < makeStandings.Count; i++)
+        foreach (var classFilter in classFilters)
         {
-            var m = makeStandings[i];
-            sb.AppendLine($"<tr><td>{i + 1}</td><td>{Enc(m.Manufacturer)}</td><td>{m.Points}</td><td>{m.Wins}</td></tr>");
+            var heading = multiClass ? $" - {Enc(classFilter!)}" : "";
+
+            sb.AppendLine($"<h2>Førermesterskap{heading}</h2>");
+            sb.AppendLine("<table><tr><th>#</th><th>Fører</th><th>Team</th><th>Poeng</th><th>Seire</th><th>Podier</th><th>Top 5</th><th>Top 10</th><th>Straffepoeng</th></tr>");
+            var driverStandings = LeagueStandingsCalculator.ComputeDriverStandings(season, classFilter);
+            for (var i = 0; i < driverStandings.Count; i++)
+            {
+                var d = driverStandings[i];
+                sb.AppendLine($"<tr><td>{i + 1}</td><td>{Enc(d.Name)}</td><td>{Enc(d.TeamName)}</td>" +
+                               $"<td>{d.Points}</td><td>{d.Wins}</td><td>{d.Podiums}</td><td>{d.Top5}</td><td>{d.Top10}</td>" +
+                               $"<td>{(d.PenaltyPointsTotal > 0 ? $"-{d.PenaltyPointsTotal}" : "-")}</td></tr>");
+            }
+            sb.AppendLine("</table>");
+
+            sb.AppendLine($"<h2>Merkemesterskap{heading}</h2>");
+            sb.AppendLine("<table><tr><th>#</th><th>Merke</th><th>Poeng</th><th>Seire</th></tr>");
+            var makeStandings = LeagueStandingsCalculator.ComputeManufacturerStandings(season, content, classFilter);
+            for (var i = 0; i < makeStandings.Count; i++)
+            {
+                var m = makeStandings[i];
+                sb.AppendLine($"<tr><td>{i + 1}</td><td>{Enc(m.Manufacturer)}</td><td>{m.Points}</td><td>{m.Wins}</td></tr>");
+            }
+            sb.AppendLine("</table>");
         }
-        sb.AppendLine("</table>");
 
         sb.AppendLine("<h2>Løpskalender</h2>");
-        sb.AppendLine("<table><tr><th>Runde</th><th>Bane</th><th>Format</th><th>Status</th><th>Vinner</th></tr>");
+        sb.AppendLine("<table><tr><th>Runde</th><th>Bane</th><th>Format</th><th>Status</th><th>Vinner (totalt)</th></tr>");
         foreach (var round in season.Rounds)
         {
             var winner = round.FieldResults.FirstOrDefault(f => f.Position == 1);

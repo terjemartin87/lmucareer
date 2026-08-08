@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +9,26 @@ using LmuCareerTool.Watching;
 using Microsoft.Win32;
 
 namespace LmuCareerTool.App;
+
+/// <summary>Avkryssbar rad i klassevelgeren ved sesonggenerering - en liga kan kjøre én klasse
+/// (f.eks. kun GT3) eller flere sammen i samme hostede løp (f.eks. GT3 + LMP2 + LMP3 + Hypercar,
+/// som ekte WEC), akkurat som et vanlig hostet lobby-løp i LMU tillater.</summary>
+public class CarClassCheckItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public CarClassCheckItem(string name) => Name = name;
+
+    public string Name { get; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { _isSelected = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected))); }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+}
 
 public class CalendarRowVm
 {
@@ -126,8 +147,9 @@ public partial class LeagueMainWindow : Window
             _engine.RoundCompleted += OnRoundCompleted;
 
             _hostName = _engine.League.HostDisplayName;
-            CarClassBox.ItemsSource = _engine.Content.Classes.Select(c => c.Name).ToList();
-            if (CarClassBox.Items.Count > 0) CarClassBox.SelectedIndex = 0;
+            var classItems = _engine.Content.Classes.Select(c => new CarClassCheckItem(c.Name)).ToList();
+            if (classItems.Count > 0) classItems[0].IsSelected = true;
+            CarClassList.ItemsSource = classItems;
         }
         catch (Exception ex)
         {
@@ -255,9 +277,12 @@ public partial class LeagueMainWindow : Window
             if (confirm != MessageBoxResult.Yes) return;
         }
 
-        if (CarClassBox.SelectedItem is not string carClass)
+        var selectedClasses = (CarClassList.ItemsSource as List<CarClassCheckItem> ?? new())
+            .Where(c => c.IsSelected).Select(c => c.Name).ToList();
+
+        if (selectedClasses.Count == 0)
         {
-            MessageBox.Show(this, "Velg en klasse først.", "Mangler klasse", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, "Velg minst én klasse først.", "Mangler klasse", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -268,9 +293,11 @@ public partial class LeagueMainWindow : Window
         }
 
         var format = (LeagueFormatPreference)FormatBox.SelectedItem;
+        var carClass = string.Join(" + ", selectedClasses);
 
         _engine.GenerateNewSeason(carClass, roundCount, format);
-        Log($"📅 Ny sesong generert: {carClass}, {roundCount} runder, {format}.");
+        Log($"📅 Ny sesong generert: {carClass}, {roundCount} runder, {format}." +
+            (selectedClasses.Count > 1 ? " Multiklasse-løp - hver klasse scores og vises separat." : ""));
         RefreshAll();
         NavCalendar.IsChecked = true;
     }
@@ -401,12 +428,44 @@ public partial class LeagueMainWindow : Window
         var season = _engine?.League.CurrentSeason ?? _engine?.League.SeasonHistory.LastOrDefault();
         if (season == null || _engine == null)
         {
+            ClassFilterCard.Visibility = Visibility.Collapsed;
             DriverGrid.ItemsSource = null;
             ManufacturerGrid.ItemsSource = null;
             return;
         }
 
-        var driverStandings = LeagueStandingsCalculator.ComputeDriverStandings(season);
+        // Et hostet løp kan blande flere klasser samtidig (GT3 + LMP2 + LMP3 + Hypercar osv,
+        // akkurat som ekte WEC) - vis en klassevelger kun når sesongen faktisk har mer enn én.
+        var classes = LeagueStandingsCalculator.GetClassesInSeason(season);
+        if (classes.Count > 1)
+        {
+            ClassFilterCard.Visibility = Visibility.Visible;
+            if (ClassFilterBox.ItemsSource is not List<string> currentClasses || !currentClasses.SequenceEqual(classes))
+            {
+                ClassFilterBox.ItemsSource = classes;
+                ClassFilterBox.SelectedIndex = 0;
+            }
+            RefreshStandingsTables(season, ClassFilterBox.SelectedItem as string);
+        }
+        else
+        {
+            ClassFilterCard.Visibility = Visibility.Collapsed;
+            RefreshStandingsTables(season, null);
+        }
+    }
+
+    private void ClassFilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var season = _engine?.League.CurrentSeason ?? _engine?.League.SeasonHistory.LastOrDefault();
+        if (season == null) return;
+        RefreshStandingsTables(season, ClassFilterBox.SelectedItem as string);
+    }
+
+    private void RefreshStandingsTables(LeagueSeason season, string? carClass)
+    {
+        if (_engine == null) return;
+
+        var driverStandings = LeagueStandingsCalculator.ComputeDriverStandings(season, carClass);
         DriverGrid.ItemsSource = driverStandings.Select((d, i) => new LeagueDriverStandingRowVm
         {
             Position = i + 1,
@@ -420,7 +479,7 @@ public partial class LeagueMainWindow : Window
             PenaltyPoints = d.PenaltyPointsTotal > 0 ? $"-{d.PenaltyPointsTotal}" : "-",
         }).ToList();
 
-        var makeStandings = LeagueStandingsCalculator.ComputeManufacturerStandings(season, _engine.Content);
+        var makeStandings = LeagueStandingsCalculator.ComputeManufacturerStandings(season, _engine.Content, carClass);
         ManufacturerGrid.ItemsSource = makeStandings.Select((m, i) => new LeagueManufacturerStandingRowVm
         {
             Position = i + 1,

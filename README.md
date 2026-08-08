@@ -705,6 +705,45 @@ publiser-knappen igjen etter hver runde for å oppdatere lenken/filen.
   tvers av **alle** ligaens sesonger (ikke bare den pågående) - vises ved dobbeltklikk på en
   fører i Stilling-fanen.
 
+### Multiklasse (GT3 + LMP2 + LMP3 + Hypercar samtidig)
+
+Et hostet LMU-løp trenger ikke være rendyrket - akkurat som ekte WEC kan et enkelt lobby-løp
+blande GT3, LMP2, LMP3 og Hypercar i samme race. Dette håndteres nå eksplisitt, ikke bare "det
+tilfeldigvis funker":
+
+* Resultatfilens `<CarClass>` og `<ClassPosition>` per sjåfør leses nå inn på
+  `Models/FieldResultEntry.cs` (var der fra før på selve `DriverResult`, men gikk tapt når
+  `LeagueEngine` bygde om til det slankere `FieldResultEntry`-øyeblikksbildet - fikset).
+* **All poengberegning i Liga skjer på `ClassPosition`, aldri den overordnede
+  løpsplasseringen.** Uten dette ville en GT3-vinner som krysset mål bak alle Hypercar-ene fått
+  poeng som om han var sist i løpet - testet eksplisitt (se Verifisert under) og bekreftet at en
+  GT3-fører scores som klassevinner (25p) selv når vedkommende er nummer to totalt bak en
+  Hypercar.
+* `LeagueStandingsCalculator.GetClassesInSeason` finner alle distinkte klasser som faktisk har
+  kjørt. En enkeltklasse-liga (det vanlige tilfellet) får automatisk kun én klasse tilbake, og
+  `ClassPosition` faller tilbake til `Position` når resultatfilen ikke har klasseinfo (eldre
+  data/rene enkeltklasse-lobbyer) - identisk oppførsel som før multiklasse-støtten ble lagt til.
+* **Sesonggenerering** (Innstillinger-fanen): klassevalget er nå en avkrysningsliste, ikke en
+  enkelt nedtrekksliste - verten kan velge kun GT3, eller flere klasser sammen (f.eks.
+  "GT3 + LMP2 + LMP3 + Hypercar"), som blir sesongens visningsnavn.
+* **Stilling-fanen** viser automatisk en klassevelger når sesongen har mer enn én klasse
+  (`ClassFilterBox` i `LeagueMainWindow`), og skjuler den helt for enkeltklasse-ligaer.
+* **HTML-publisering** bryter ut én fører-/merkemesterskapstabell per klasse når sesongen er
+  multiklasse, med klassenavnet i overskriften - en enkeltklasse-sesong får fortsatt bare én ren
+  tabell uten overskrift, akkurat som før.
+
+**Verifisert:** egen integrasjonstest (`LeagueTest`-konsollharness i scratchpad, kjørt direkte mot
+`LeagueEngine`/`LeagueStandingsCalculator`/`LeagueReportHtmlBuilder` med syntetiske
+multiplayer-resultatfiler bygget etter ekte XML-skjema) dekket: en enkeltklasse GT3-runde, en
+etterfølgende MULTIKLASSE-runde (Hypercar + GT3 blandet, med bevisst avvikende
+total-/klasseplassering), en straff, sesongfullføring/historikk-overgang,
+kryss-sesong-førerhistorikk, og HTML-eksport med og uten klasseoverskrifter. Alle 15 sjekker
+(inkl. at en GT3-fører scores 50p/2 seire over to runder til tross for P2 totalt i den ene runden)
+gikk grønt. Appen ble i tillegg startet fra den ferske installerte builden og kjørte stabilt uten
+unntak - selve klikkingen gjennom klassevelgeren i UI-en er kodegjennomgått, ikke sett med øynene,
+samme vedvarende begrensning som resten av UI-arbeidet (ingen desktop-GUI-automatisering
+tilgjengelig i denne sandkassen).
+
 ### Sesonglivssyklus
 
 Verten genererer en ny sesong fra Innstillinger-fanen: velger klasse, antall løp og

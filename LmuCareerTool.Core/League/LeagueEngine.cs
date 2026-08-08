@@ -174,6 +174,10 @@ public class LeagueEngine
                 CarType = d.CarType,
                 Position = d.Position,
                 FinishStatus = d.FinishStatus,
+                CarClass = d.CarClass,
+                // LMU setter ikke alltid ClassPosition i enklasses løp - fall tilbake til den
+                // overordnede plasseringen, som da ER klasseplasseringen siden alle er i samme klasse.
+                ClassPosition = d.ClassPosition > 0 ? d.ClassPosition : d.Position,
             })
             .ToList();
 
