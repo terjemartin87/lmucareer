@@ -4,14 +4,20 @@ namespace LmuCareerTool.Parsing;
 
 /// <summary>
 /// LMUs resultatfiler skiller på &lt;Setting&gt;: "Race Weekend" er en offline økt mot
-/// spillets faste AI-startliste (WEC-feltet), mens "Multiplayer" er en tilfeldig lobby med
-/// andre mennesker som aldri kommer igjen. Et ekte mesterskap med faste rivaler er kun
-/// meningsfullt for Race Weekend, så kun den modusen skal telle mot karrieren.
+/// spillets faste AI-startliste (WEC-feltet), mens "Multiplayer" er et hostet løp med ekte
+/// mennesker - enten en tilfeldig offentlig lobby, eller en avtalt liga-kveld. Karrieremodus
+/// og ligamodus teller derfor stikk motsatte modus: karrieren trenger Race Weekends faste
+/// AI-startliste for at et mesterskap skal gi mening, mens ligaen KUN gir mening for et ekte
+/// hostet felt av mennesker.
 /// </summary>
 public static class SessionModeFilter
 {
     private const string CareerEligibleMode = "Race Weekend";
+    private const string LeagueEligibleMode = "Multiplayer";
 
     public static bool IsCareerEligible(SessionResult session) =>
         string.Equals(session.SettingMode?.Trim(), CareerEligibleMode, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsLeagueEligible(SessionResult session) =>
+        string.Equals(session.SettingMode?.Trim(), LeagueEligibleMode, StringComparison.OrdinalIgnoreCase);
 }

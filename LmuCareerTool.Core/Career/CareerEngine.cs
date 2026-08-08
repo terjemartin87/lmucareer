@@ -2,6 +2,7 @@ using LmuCareerTool.Championship;
 using LmuCareerTool.Content;
 using LmuCareerTool.Models;
 using LmuCareerTool.Parsing;
+using LmuCareerTool.Scoring;
 using LmuCareerTool.Season;
 using LmuCareerTool.Transfers;
 using LmuCareerTool.Validation;

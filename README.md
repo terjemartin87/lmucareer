@@ -16,9 +16,10 @@ mesterskapstabell, rating, credits og kontrakter.
 2. [Kjente feil (rotårsaker)](#kjente-feil-rotårsaker)
 3. [Arkitektur og filstruktur](#arkitektur-og-filstruktur)
 4. [Fase-plan](#fase-plan)
-5. [Designnotater](#designnotater)
-6. [Bygge og kjøre](#bygge-og-kjøre)
-7. [Vedlegg A: verifiserte navn fra spillet](#vedlegg-a-verifiserte-navn-fra-spillet)
+5. [Liga modus](#liga-modus)
+6. [Designnotater](#designnotater)
+7. [Bygge og kjøre](#bygge-og-kjøre)
+8. [Vedlegg A: verifiserte navn fra spillet](#vedlegg-a-verifiserte-navn-fra-spillet)
 
 ---
 
@@ -39,6 +40,7 @@ mesterskapstabell, rating, credits og kontrakter.
 | Fører-portretter | ✅ Portrett-system med faste bilder for deg og alle AI-motstandere (Fase 5, omfang endret fra 3D) |
 | Visuell design (GT-racing tema) | ✅ Ny fargepalett, kort-UI, venstre-nav, mørk tittellinje (Fase 6) |
 | Installer | ✅ Inno Setup + self-contained publish (Fase 7, se begrensning under) |
+| Liga modus (hostede mesterskap mot ekte motstandere) | ✅ Helt separat modus - se [Liga modus](#liga-modus) |
 | Tester | ❌ Finnes ikke - Fase 8 |
 
 Fase 0-7 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
@@ -233,11 +235,25 @@ LmuCareerTool/
 │   │   ├── AppSettingsStore.cs
 │   │   └── LmuPathLocator.cs                  [1]  finner LMU via Steam-registry
 │   │
-│   └── Watching/
-│       └── ResultsWatcher.cs
+│   ├── Watching/
+│   │   └── ResultsWatcher.cs
+│   │
+│   ├── Scoring/
+│   │   └── PointsCalculator.cs                     F1-poengskala, delt av Karriere OG Liga
+│   │
+│   └── League/                                     Liga modus - helt separat fra Career/
+│       ├── LeagueModels.cs                         LeagueProfile/-Season/-Round/-Penalty
+│       ├── LeagueSeasonGenerator.cs                 kalender uten bil-tildeling (egne biler)
+│       ├── LeagueStore.cs                           league_<navn>.json
+│       ├── LeagueEngine.cs                          resultat-innhenting fra Multiplayer-filer
+│       ├── LeagueStandingsCalculator.cs             fører-/merkemesterskap + straffer + historikk
+│       └── LeagueReportHtmlBuilder.cs               statisk HTML-øyeblikksbilde (delingsmekanismen)
 │
 ├── LmuCareerTool.App/                         WPF-desktop-app (Windows)
-│   ├── App.xaml / App.xaml.cs
+│   ├── App.xaml / App.xaml.cs                      starter på ModeSelectWindow, ikke WelcomeWindow
+│   ├── ModeSelectWindow.xaml(.cs)                   «Karriere modus» vs «Liga modus»
+│   ├── LeagueWelcomeWindow.xaml(.cs)                liganavn + vertsnavn + Results-mappe
+│   ├── LeagueMainWindow.xaml(.cs)                   liga-dashboard, stilling, kalender, straffer
 │   ├── Theme/                                 [0]
 │   │   ├── Colors.xaml                             farger og pensler
 │   │   ├── Controls.xaml                           ComboBox, RadioButton, DataGrid, Button
@@ -636,6 +652,94 @@ desktop-GUI-automatisering tilgjengelig i denne sandkassen.
   poengberegning, interesse-/tilbudsmodellen, sesonggenerator.
 * GitHub Actions: bygg + test + publiser installer på tag.
 * **Sett prosjektet under git** – det er ikke et git-repo i dag, og det bør det være før Fase 1.
+
+---
+
+## Liga modus
+
+✅ Ferdig. Bygget etter eksplisitt ønske om et system for LMU-ligaer/-communities som i dag
+driver dette manuelt i Excel. **Helt separat fra Karriere modus** - egen lagringsfil
+(`league_<navn>.json`), egne vinduer, ingen XP/nivå/Rating/Credits/kontrakter/transfer-marked.
+Kun et poengsystem for førere og merker, pluss et manuelt straffesystem.
+
+### Hvorfor Liga og Karriere teller stikk motsatt spillmodus
+
+Karriere krever `<Setting>Race Weekend</Setting>` (spillets faste AI-startliste - ellers gir et
+"mesterskap" mot tilfeldige AI-navn ingen mening). Liga krever det motsatte:
+`<Setting>Multiplayer</Setting>`, altså et ekte hostet løp med ekte mennesker
+(`SessionModeFilter.IsLeagueEligible`). En Race Weekend-fil teller aldri mot en liga, og en
+Multiplayer-fil teller aldri mot karrieren.
+
+### Hvordan resultater kommer inn - ingen server, ingen API
+
+Verifisert mot en ekte 35-førers hostet resultatfil: **hvem som helst sin lokale resultatfil
+inneholder allerede hele feltet** - alle deltakeres navn, team, bil, plassering, hendelser og
+straffer, uansett hvem sin PC som skrev filen. Løsningen ble derfor valgt slik at **verten kjører
+løpet selv og importerer sin egen fil** (`LeagueEngine.ProcessFile`) - akkurat samme
+`ResultsWatcher`-mønster som karrieren, bare pekt mot `LeagueEngine` i stedet for `CareerEngine`.
+Ingen andre deltakere trenger å installere noe eller sende inn data.
+
+### Hvordan andre i ligaen faktisk ser stillingen
+
+Verten trykker **"📤 Publiser HTML-øyeblikksbilde..."** i Innstillinger-fanen
+(`LeagueEngine.PublishSnapshot` → `LeagueReportHtmlBuilder.Build`), velger hvor filen skal lagres,
+og sender/laster opp den ene HTML-filen selv (e-post, Discord, et filutvekslingssted - hva verten
+foretrekker). Filen er **statisk og selvstendig** (inline CSS, ingen eksterne avhengigheter) -
+alle kan åpne og se den, ingen kan endre den, siden det ikke finnes noe å skrive til. Dette var et
+bevisst valg fremfor en live/hostet løsning med innlogging: en statisk fil er i seg selv en
+"viewer-only"-tilgangskontroll, uten at noe innlogging/rettighetssystem måtte bygges. Trykk
+publiser-knappen igjen etter hver runde for å oppdatere lenken/filen.
+
+### Poengsystem og straffer
+
+* Samme F1-poengskala (25-18-15-12-10-8-6-4-2-1) som karrieren, nå flyttet til en nøytral
+  `LmuCareerTool.Scoring`-namespace (`PointsCalculator.cs`) slik at Liga ikke trenger å avhenge
+  av `LmuCareerTool.Career`.
+* `LeagueStandingsCalculator.ComputeDriverStandings`/`ComputeManufacturerStandings`: fører- og
+  merkemesterskap fra sesongens fullførte runder, med `Wins`/`Podiums`/`Top5`/`Top10` per fører.
+* **Straffer** (`LeaguePenalty`): verten gir manuelt et poengtrekk og/eller diskvalifisering per
+  fører per runde fra Straffer-fanen, med en begrunnelsestekst. `finalPoints =
+  max(0, (disqualified ? 0 : poeng for plassering) - poengtrekk)` - diskvalifisering nuller ut
+  poengene for runden uansett plassering.
+* `LeagueStandingsCalculator.BuildDriverHistory`: aggregerer én navngitt førers statistikk på
+  tvers av **alle** ligaens sesonger (ikke bare den pågående) - vises ved dobbeltklikk på en
+  fører i Stilling-fanen.
+
+### Sesonglivssyklus
+
+Verten genererer en ny sesong fra Innstillinger-fanen: velger klasse, antall løp og
+Sprint/Endurance/Mixed-fordeling (`LeagueSeasonGenerator.Generate`, gjenbruker
+`Season.CalendarBuilder` direkte for banefordelingen - **ingen** bil-tildeling, siden
+ligaførere kjører sine egne biler). Feltet **låses** etter første fullførte runde
+(`LeagueSeason.LockedRosterNames`, samme mønster som `FieldRoster` i karrieren). Når siste
+runde er fullført, flyttes sesongen automatisk til `SeasonHistory` og `CurrentSeason` nullstilles
+- verten kan generere en ny sesong når som helst deretter.
+
+### UI-flyt
+
+`App.xaml.cs` starter nå på `ModeSelectWindow` (i stedet for rett til `WelcomeWindow`) - første
+skjermbilde brukeren ser er et eksplisitt valg mellom **"🏎️ Karriere modus"** og
+**"🏆 Liga modus"**, med korte forklaringer på hva hver modus faktisk gir deg. Liga-valget leder
+til `LeagueWelcomeWindow` (liganavn, vertens visningsnavn, Results-mappe - samme
+"Fortsett liga"/"Opprett liga"-gjenkjenning som karrierens `WelcomeWindow`), som igjen leder til
+`LeagueMainWindow`: Dashboard (live-logg), Stilling (fører-/merketabeller), Kalender
+(løpskalender med vinner per runde), Straffer (liste + skjema for å gi ny straff) og
+Innstillinger (overvåking, generer ny sesong, publiser HTML).
+
+**Verifisert:** hele solution (`Core`, `App`, `Console`) bygger med 0 advarsler/feil. Appen ble
+startet fra kaldstart og kjørte stabilt uten unntak i konsollen (ingen karriere- eller ligafiler
+fra før), deretter avsluttet rent. Samme vedvarende begrensning som resten av UI-arbeidet: ingen
+desktop-GUI-automatisering tilgjengelig i denne sandkassen, så selve det visuelle resultatet
+(layout, om "Fortsett liga" faktisk endrer seg riktig, om straffe-skjemaet oppfører seg som
+ventet ved faktisk klikking) er kodegjennomgått, ikke sett med øynene.
+
+**Avvik fra opprinnelig ønske:** ingen e-post-basert invitasjon eller live-lenke med innlogging -
+dette var et bevisst arkitekturvalg (se over), avklart eksplisitt med bruker via to spørsmål:
+delingsmekanisme (statisk publisert øyeblikksbilde, ikke live/hostet) og resultat-innhenting
+(verten importerer selv, ikke en server-API mot Hosted Servers). Ingen fjerning/gjenoppretting av
+enkeltstraffer fra UI-en ennå - kun å gi nye. Ingen "generer ny sesong mens forrige ikke er
+fullført"-sperre utover en bekreftelsesdialog (data fra en ufullført sesong som overskrives, går
+tapt - fullførte sesonger i `SeasonHistory` er ikke berørt).
 
 ---
 

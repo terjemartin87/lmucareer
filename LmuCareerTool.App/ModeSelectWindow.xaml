@@ -1,0 +1,46 @@
+<Window x:Class="LmuCareerTool.App.ModeSelectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LMU Karriere" Width="560" SizeToContent="Height"
+        Background="{StaticResource BgColor}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="{StaticResource StripeBrush}" />
+
+        <StackPanel Grid.Row="1" Margin="40,36,40,40">
+            <Image Source="/Assets/app-icon-512.png" Width="92" Height="92" HorizontalAlignment="Center" Margin="0,0,0,18">
+                <Image.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.4" Color="Black" />
+                </Image.Effect>
+            </Image>
+            <TextBlock Text="LMU KARRIERE" FontSize="28" FontFamily="Segoe UI Semibold" HorizontalAlignment="Center" />
+            <TextBlock Text="Fra pit lane til podium - din egen Le Mans-karriere." FontStyle="Italic"
+                       Foreground="{StaticResource MutedTextColor}" HorizontalAlignment="Center" Margin="0,4,0,8" />
+
+            <TextBlock Text="VELG MODUS" Style="{StaticResource SectionHeaderStyle}" Margin="0,30,0,14" HorizontalAlignment="Center" />
+
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,14" Cursor="Hand" MouseLeftButtonUp="CareerCard_Click">
+                <StackPanel>
+                    <TextBlock Text="🏎️  KARRIERE MODUS" FontSize="17" FontFamily="Segoe UI Semibold" />
+                    <TextBlock Text="Bygg din egen sjåførkarriere mot spillets faste AI-startlister. XP, kontrakter, transfer market og sesongrapporter."
+                               Foreground="{StaticResource MutedTextColor}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,10" />
+                    <Button Content="Gå til Karriere modus" Click="CareerCard_Click" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,10" Cursor="Hand" MouseLeftButtonUp="LeagueCard_Click">
+                <StackPanel>
+                    <TextBlock Text="🏆  LIGA MODUS" FontSize="17" FontFamily="Segoe UI Semibold" />
+                    <TextBlock Text="Kjør et hostet mesterskap mot ekte motstandere. Poengsystem for førere og merker, straffer, og en delbar ligastilling - ingen XP eller transfer market."
+                               Foreground="{StaticResource MutedTextColor}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,10" />
+                    <Button Content="Gå til Liga modus" Style="{StaticResource SecondaryButtonStyle}" Click="LeagueCard_Click" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</Window>

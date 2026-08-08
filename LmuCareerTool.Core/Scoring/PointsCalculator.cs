@@ -1,4 +1,4 @@
-namespace LmuCareerTool.Career;
+namespace LmuCareerTool.Scoring;
 
 public static class PointsCalculator
 {

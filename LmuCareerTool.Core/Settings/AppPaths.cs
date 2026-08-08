@@ -19,6 +19,11 @@ public static class AppPaths
     public static string CareerFilePath(string playerName) =>
         Path.Combine(DataRoot, $"career_{Sanitize(playerName)}.json");
 
+    public static string LeagueFilePath(string leagueName) =>
+        Path.Combine(DataRoot, $"league_{Sanitize(leagueName)}.json");
+
+    public static string LeagueSettingsFilePath => Path.Combine(DataRoot, "league_settings.json");
+
     public static string ContentFilePath => Path.Combine(AppContext.BaseDirectory, "Content", "game-content.json");
 
     static AppPaths()
