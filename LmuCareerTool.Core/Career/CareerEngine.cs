@@ -1,7 +1,9 @@
+using LmuCareerTool.Championship;
 using LmuCareerTool.Content;
 using LmuCareerTool.Models;
 using LmuCareerTool.Parsing;
 using LmuCareerTool.Season;
+using LmuCareerTool.Validation;
 
 namespace LmuCareerTool.Career;
 
@@ -22,8 +24,24 @@ public class WeekendProcessingOutcome
     public int PointsEarned { get; set; }
     public int RatingDelta { get; set; }
     public int CreditsEarned { get; set; }
+
+    /// <summary>Runden som faktisk ble kreditert - null hvis ingen sesongrunde ble fullført.</summary>
     public SeasonEvent? MatchedEvent { get; set; }
+
+    /// <summary>Neste ikke-fullførte runde i sesongen da dette løpet ble behandlet - brukes til
+    /// å tilby "godkjenn likevel" selv om oppsettet (bane og/eller bil) ikke stemte.</summary>
+    public SeasonEvent? CandidateEvent { get; set; }
+
     public bool CarMismatch { get; set; }
+    public bool TrackMismatch { get; set; }
+
+    /// <summary>Menneskelesbare avviksmeldinger fra SetupValidator.</summary>
+    public List<string> Issues { get; set; } = new();
+
+    /// <summary>True hvis spilleren kan tvinge gjennom denne runden manuelt til tross for avvik.</summary>
+    public bool CanApproveAnyway =>
+        (CarMismatch || TrackMismatch) && CandidateEvent != null && Weekend.RaceResult != null;
+
     public List<string> NewUnlocks { get; set; } = new();
     public List<string> NewManufacturerOffers { get; set; } = new();
 
@@ -33,8 +51,9 @@ public class WeekendProcessingOutcome
 }
 
 /// <summary>
-/// Samler all karriere-logikk (parsing, gruppering, XP, poeng, rating, credits, sesong, bilkrav)
-/// på ett sted, slik at både konsoll-testverktøyet og WPF-UI-en bruker nøyaktig samme logikk.
+/// Samler all karriere-logikk (parsing, gruppering, XP, poeng, rating, credits, sesong, bilkrav,
+/// mesterskapstabell) på ett sted, slik at både konsoll-testverktøyet og WPF-UI-en bruker
+/// nøyaktig samme logikk.
 /// </summary>
 public class CareerEngine
 {
@@ -43,12 +62,16 @@ public class CareerEngine
 
     private readonly WeekendGrouper _grouper = new();
     private readonly CareerStore _store;
+    private readonly PendingWeekendStore _pendingStore;
     private readonly string _playerName;
 
     public GameContent Content { get; }
     public CareerProfile Career { get; private set; }
 
     public event Action<SessionResult>? SessionParsed;
+
+    /// <summary>Fyres for økter som ikke telles mot karrieren (f.eks. Multiplayer) - se SessionModeFilter.</summary>
+    public event Action<SessionResult>? SessionIgnored;
     public event Action<WeekendProcessingOutcome>? WeekendCompleted;
 
     public CareerEngine(string playerName, string careerFilePath, string contentFilePath)
@@ -57,6 +80,13 @@ public class CareerEngine
         _store = new CareerStore(careerFilePath);
         Content = ContentLoader.Load(contentFilePath);
         Career = _store.LoadOrCreate(playerName);
+
+        var careerDir = Path.GetDirectoryName(Path.GetFullPath(careerFilePath))!;
+        var careerFileStem = Path.GetFileNameWithoutExtension(careerFilePath);
+        _pendingStore = new PendingWeekendStore(Path.Combine(careerDir, $"pending_{careerFileStem}.json"));
+
+        var pendingState = _pendingStore.LoadOrEmpty();
+        _grouper.RestoreState(pendingState.Practice, pendingState.Qualifying);
 
         // Sørg for at startmerkene i gjeldende klasse er tilgjengelige, uansett om en sesong er i gang.
         ManufacturerUnlockService.EnsureStartingManufacturersUnlocked(Career, Content, Career.CurrentClass);
@@ -105,14 +135,29 @@ public class CareerEngine
         _store.Save(Career);
     }
 
+    /// <summary>Fører- og merkemesterskapstabellen for gjeldende (eller angitt) sesong.</summary>
+    public List<DriverStandingEntry> GetDriverStandings(SeasonModel? season = null, int? throughRound = null) =>
+        ChampionshipTable.ComputeDriverStandings(season ?? Career.CurrentSeason, _playerName, throughRound);
+
+    public List<ManufacturerStandingEntry> GetManufacturerStandings(SeasonModel? season = null, int? throughRound = null) =>
+        ChampionshipTable.ComputeManufacturerStandings(season ?? Career.CurrentSeason, Content, throughRound);
+
     /// <summary>Leser en fil kun for å fylle Practice/Qualifying-cache - trigger ikke XP.</summary>
     public void IndexExistingFile(string path)
     {
         var session = ResultXmlParser.Parse(path);
         SessionParsed?.Invoke(session);
+
+        if (!SessionModeFilter.IsCareerEligible(session))
+        {
+            SessionIgnored?.Invoke(session);
+            return;
+        }
+
         if (session.SessionType != SessionType.Race)
         {
             _grouper.Feed(session, _playerName);
+            PersistPendingState();
         }
     }
 
@@ -122,10 +167,70 @@ public class CareerEngine
         var session = ResultXmlParser.Parse(path);
         SessionParsed?.Invoke(session);
 
+        if (!SessionModeFilter.IsCareerEligible(session))
+        {
+            SessionIgnored?.Invoke(session);
+            return null;
+        }
+
         var weekend = _grouper.Feed(session, _playerName);
+        PersistPendingState();
         if (weekend == null) return null;
 
         return HandleCompletedWeekend(weekend);
+    }
+
+    /// <summary>
+    /// Tvinger gjennom en runde manuelt til tross for at bane og/eller bil ikke stemte
+    /// (WeekendProcessingOutcome.CanApproveAnyway). Din egen karriere, dine egne regler.
+    /// </summary>
+    public WeekendProcessingOutcome ApproveDespiteMismatch(WeekendProcessingOutcome previous)
+    {
+        if (!previous.CanApproveAnyway || previous.CandidateEvent == null || previous.Weekend.RaceResult == null)
+            throw new InvalidOperationException("Ingenting å godkjenne for dette resultatet.");
+
+        var weekend = previous.Weekend;
+        var matchedEvent = previous.CandidateEvent;
+
+        var (xp, points, ratingDelta, creditsEarned) = CompleteRound(matchedEvent, weekend);
+
+        // Oppdater den siste historikk-oppføringen for denne helgen i stedet for å legge til en ny.
+        var historyEntry = Career.RaceHistory.LastOrDefault(h =>
+            h.CompletedAtUtc == weekend.CompletedAtUtc &&
+            h.TrackVenue.Equals(weekend.TrackVenue, StringComparison.OrdinalIgnoreCase));
+        if (historyEntry != null)
+        {
+            historyEntry.RoundNumber = matchedEvent.RoundNumber;
+            historyEntry.SeasonNumber = Career.CurrentSeason?.SeasonNumber;
+            historyEntry.XpEarned = xp;
+            historyEntry.PointsEarned = points;
+        }
+
+        // Ved avvik ble ikke xp/rating/credits lagt til forrige gang (alt sto på 0) - legg dem til nå.
+        Career.TotalXp += xp;
+        Career.Level = XpCalculator.LevelFromXp(Career.TotalXp);
+        Career.DriverRating = RatingCalculator.ApplyDelta(Career.DriverRating, ratingDelta);
+        Career.Credits += creditsEarned;
+
+        var outcome = new WeekendProcessingOutcome
+        {
+            Weekend = weekend,
+            MatchedEvent = matchedEvent,
+            CandidateEvent = matchedEvent,
+            XpEarned = xp,
+            PointsEarned = points,
+            RatingDelta = ratingDelta,
+            CreditsEarned = creditsEarned,
+        };
+
+        outcome.NewUnlocks = ClassUnlockService.CheckForNewUnlocks(Career, Content);
+        outcome.NewManufacturerOffers = ManufacturerUnlockService.CheckForNewOffers(Career, Content, Career.CurrentClass);
+
+        CompleteSeasonIfFinished(outcome);
+
+        _store.Save(Career);
+        WeekendCompleted?.Invoke(outcome);
+        return outcome;
     }
 
     private WeekendProcessingOutcome HandleCompletedWeekend(RaceWeekendResult weekend)
@@ -140,9 +245,16 @@ public class CareerEngine
 
         var race = weekend.RaceResult;
 
-        var matchedEvent = Career.CurrentSeason?.Events.FirstOrDefault(e =>
-            !e.Completed && e.TrackVenue.Equals(weekend.TrackVenue, StringComparison.OrdinalIgnoreCase));
+        // F7-fiks: match KUN mot neste ikke-fullførte runde (ikke et vilkårlig banesøk), slik at
+        // du ikke kan fullføre runder ute av rekkefølge eller kreditere feil runde ved dupliserte baner.
+        var nextEvent = Career.CurrentSeason?.NextEvent;
+        outcome.CandidateEvent = nextEvent;
+
+        var trackMismatch = nextEvent != null &&
+            !nextEvent.TrackVenue.Equals(weekend.TrackVenue, StringComparison.OrdinalIgnoreCase);
+        var matchedEvent = nextEvent != null && !trackMismatch ? nextEvent : null;
         outcome.MatchedEvent = matchedEvent;
+        outcome.TrackMismatch = trackMismatch;
 
         var xp = XpCalculator.Calculate(weekend);
         var points = 0;
@@ -153,8 +265,6 @@ public class CareerEngine
         {
             var carMatches = string.Equals(
                 race.CarType.Trim(), matchedEvent.AssignedCar.Trim(), StringComparison.OrdinalIgnoreCase);
-
-            matchedEvent.CarMatched = carMatches;
             outcome.CarMismatch = !carMatches;
 
             if (!carMatches)
@@ -163,17 +273,11 @@ public class CareerEngine
             }
             else
             {
-                points = PointsCalculator.PointsForPosition(race.Position);
-                ratingDelta = RatingCalculator.CalculateDelta(weekend);
-                creditsEarned = CreditsCalculator.Calculate(weekend);
-
-                matchedEvent.Completed = true;
-                matchedEvent.CompletedAtUtc = weekend.CompletedAtUtc;
-                matchedEvent.FinishPos = race.Position;
-                matchedEvent.XpEarned = xp;
-                matchedEvent.PointsEarned = points;
+                (xp, points, ratingDelta, creditsEarned) = CompleteRound(matchedEvent, weekend);
             }
         }
+
+        outcome.Issues = SetupValidator.Validate(matchedEvent, trackMismatch, nextEvent?.TrackVenue, weekend);
 
         outcome.XpEarned = xp;
         outcome.PointsEarned = points;
@@ -220,6 +324,52 @@ public class CareerEngine
         outcome.NewUnlocks = ClassUnlockService.CheckForNewUnlocks(Career, Content);
         outcome.NewManufacturerOffers = ManufacturerUnlockService.CheckForNewOffers(Career, Content, Career.CurrentClass);
 
+        CompleteSeasonIfFinished(outcome);
+
+        _store.Save(Career);
+        WeekendCompleted?.Invoke(outcome);
+        return outcome;
+    }
+
+    /// <summary>Regner ut belønninger for en fullført, matchende runde og oppdaterer SeasonEvent
+    /// (inkl. mesterskapsfeltet og en evt. rosterlåsing). Delt mellom normal- og godkjenn-likevel-flyten.</summary>
+    private (int xp, int points, int ratingDelta, int creditsEarned) CompleteRound(
+        SeasonEvent matchedEvent, RaceWeekendResult weekend)
+    {
+        var race = weekend.RaceResult!;
+        var xp = XpCalculator.Calculate(weekend);
+        var points = PointsCalculator.PointsForPosition(race.Position);
+        var ratingDelta = RatingCalculator.CalculateDelta(weekend);
+        var creditsEarned = CreditsCalculator.Calculate(weekend);
+
+        matchedEvent.CarMatched = true;
+        matchedEvent.Completed = true;
+        matchedEvent.CompletedAtUtc = weekend.CompletedAtUtc;
+        matchedEvent.FinishPos = race.Position;
+        matchedEvent.XpEarned = xp;
+        matchedEvent.PointsEarned = points;
+
+        matchedEvent.FieldResults = weekend.FullRaceField
+            .Where(d => d.Position > 0)
+            .Select(d => new FieldResultEntry
+            {
+                Name = RosterMatcher.Normalize(d.Name),
+                TeamName = d.TeamName,
+                CarType = d.CarType,
+                Position = d.Position,
+                FinishStatus = d.FinishStatus,
+                IsPlayer = d.IsPlayer
+            })
+            .ToList();
+
+        if (Career.CurrentSeason != null)
+            FieldRoster.LockIfNeeded(Career.CurrentSeason, matchedEvent.FieldResults);
+
+        return (xp, points, ratingDelta, creditsEarned);
+    }
+
+    private void CompleteSeasonIfFinished(WeekendProcessingOutcome outcome)
+    {
         if (Career.CurrentSeason?.IsComplete == true)
         {
             outcome.SeasonJustCompleted = true;
@@ -227,9 +377,14 @@ public class CareerEngine
             Career.SeasonHistory.Add(Career.CurrentSeason);
             Career.CurrentSeason = null; // UI må be spilleren velge klasse+merke (StartNewSeason) før neste runde vises
         }
+    }
 
-        _store.Save(Career);
-        WeekendCompleted?.Invoke(outcome);
-        return outcome;
+    private void PersistPendingState()
+    {
+        _pendingStore.Save(new PendingWeekendState
+        {
+            Practice = _grouper.PendingPractice.ToDictionary(kv => kv.Key, kv => kv.Value),
+            Qualifying = _grouper.PendingQualifying.ToDictionary(kv => kv.Key, kv => kv.Value),
+        });
     }
 }

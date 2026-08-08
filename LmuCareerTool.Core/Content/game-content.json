@@ -5,11 +5,13 @@
       "manufacturers": [
         { "name": "BMW", "cars": ["BMW M4 LMGT3"], "startUnlocked": true, "ratingRequired": 0, "unlockCost": 0 },
         { "name": "Ford", "cars": ["Ford Mustang LMGT3"], "startUnlocked": true, "ratingRequired": 0, "unlockCost": 0 },
-        { "name": "Corvette", "cars": ["Corvette Z06 LMGT3"], "startUnlocked": false, "ratingRequired": 55, "unlockCost": 3000 },
-        { "name": "Lamborghini", "cars": ["Lamborghini Huracan LMGT3"], "startUnlocked": false, "ratingRequired": 60, "unlockCost": 3500 },
-        { "name": "McLaren", "cars": ["McLaren 720S LMGT3"], "startUnlocked": false, "ratingRequired": 65, "unlockCost": 4000 },
-        { "name": "Aston Martin", "cars": ["Aston Martin Vantage LMGT3"], "startUnlocked": false, "ratingRequired": 70, "unlockCost": 4500 },
-        { "name": "Ferrari", "cars": ["Ferrari 296 LMGT3"], "startUnlocked": false, "ratingRequired": 80, "unlockCost": 6000 },
+        { "name": "Corvette", "cars": ["Chevrolet Corvette Z06 LMGT3.R"], "startUnlocked": false, "ratingRequired": 55, "unlockCost": 3000 },
+        { "name": "Lamborghini", "cars": ["Lamborghini Huracan LMGT3 Evo2"], "startUnlocked": false, "ratingRequired": 60, "unlockCost": 3500 },
+        { "name": "McLaren", "cars": ["McLaren 720S LMGT3 Evo"], "startUnlocked": false, "ratingRequired": 65, "unlockCost": 4000 },
+        { "name": "Aston Martin", "cars": ["Aston Martin Vantage AMR LMGT3"], "startUnlocked": false, "ratingRequired": 70, "unlockCost": 4500 },
+        { "name": "Lexus", "cars": ["Lexus RCF LMGT3"], "startUnlocked": false, "ratingRequired": 75, "unlockCost": 5000 },
+        { "name": "Mercedes-AMG", "cars": ["Mercedes-AMG LMGT3"], "startUnlocked": false, "ratingRequired": 78, "unlockCost": 5500 },
+        { "name": "Ferrari", "cars": ["Ferrari 296 LMGT3", "Ferrari 296 LMGT3 Evo"], "startUnlocked": false, "ratingRequired": 80, "unlockCost": 6000 },
         { "name": "Porsche", "cars": ["Porsche 911 GT3 R LMGT3"], "startUnlocked": false, "ratingRequired": 88, "unlockCost": 7500 }
       ]
     },
@@ -17,34 +19,31 @@
       "Ligier JS P320",
       "Duqueine D08",
       "Duqueine D09"
-    ] },
+    ], "_verified": false },
     { "name": "LMP2", "order": 3, "xpThreshold": 1200, "cars": [
       "Oreca 07"
-    ] },
+    ], "_verified": false },
     { "name": "Hypercar", "order": 4, "xpThreshold": 2500, "cars": [
       "Porsche 963",
       "Ferrari 499P",
-      "Toyota GR010",
+      "Toyota TR010",
       "Cadillac V-Series.R",
       "Peugeot 9x8",
       "BMW M Hybrid V8",
-      "Genesis GMR-001"
-    ] }
+      "Genesis GMR001",
+      "Alpine A424",
+      "Aston Martin Valkyrie LMH",
+      "Lamborghini SC63"
+    ], "_verified": true }
   ],
   "tracks": [
     "Circuit de la Sarthe",
-    "Spa-Francorchamps",
-    "Sebring International Raceway",
-    "Bahrain International Circuit",
-    "Fuji Speedway",
-    "Portimao",
-    "Interlagos",
-    "Circuit of the Americas",
-    "Monza",
+    "Circuit de Spa-Francorchamps",
     "Daytona International Speedway",
+    "Fuji Speedway",
     "WeatherTech Raceway Laguna Seca",
-    "Circuit de Barcelona-Catalunya",
-    "Imola"
+    "Bahrain International Circuit",
+    "Autodromo Enzo e Dino Ferrari"
   ],
   "weatherOptions": [
     "Clear",
@@ -54,5 +53,5 @@
     "Heavy Rain (dynamic)",
     "Dynamic (full weather slots on)"
   ],
-  "_comment": "Bane-, bil- og merkenavn er satt sammen manuelt. Kun GT3 har et fullt merke/transfer-marked-oppsett - de andre klassene bruker fortsatt en flat 'cars'-liste uten merkepolitikk. Bruk EKSAKT samme skrivemåte som <TrackVenue>/<CarType> i resultatfilene dine. ratingRequired/unlockCost kan justeres fritt for å endre vanskelighetsgrad på overgangene."
+  "_comment": "Alle bil- og banenavn her er verifisert mot ekte resultatfiler 8. august 2026 (se README Vedlegg A). LMP2/LMP3 ('_verified': false) er fortsatt uverifiserte gjetninger - kjør en økt i den klassen og kjør 'dotnet run --project LmuCareerTool.Console -- validate' for å bekrefte riktig skrivemåte før du stoler på dem. Samme kommando avdekker enhver ny bane/bil spillet introduserer senere. ratingRequired/unlockCost kan justeres fritt for å endre vanskelighetsgrad på overgangene."
 }

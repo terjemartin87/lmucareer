@@ -57,6 +57,7 @@
                         <ColumnDefinition Width="2*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="LMU Results-mappe" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
@@ -67,6 +68,8 @@
                         <TextBox x:Name="PlayerNameBox" />
                     </StackPanel>
                     <Button x:Name="StartStopButton" Grid.Column="2" Content="Start overvåking" VerticalAlignment="Bottom" Click="StartStopButton_Click" />
+                    <Button x:Name="ChampionshipButton" Grid.Column="3" Content="Mesterskap" VerticalAlignment="Bottom" Margin="8,0,0,0"
+                            Background="{StaticResource PanelHoverColor}" Click="ChampionshipButton_Click" />
                 </Grid>
                 <TextBlock x:Name="StatusText" Text="Ikke startet." Foreground="{StaticResource MutedTextColor}" Margin="0,10,0,0" />
             </StackPanel>
@@ -90,11 +93,19 @@
                 <!-- Next race callout -->
                 <Border x:Name="NextRaceCard" Grid.Row="0" Background="#FF262A33" BorderBrush="{StaticResource AccentColor}" BorderThickness="1.5"
                         CornerRadius="10" Padding="16" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="NESTE LØP" Foreground="{StaticResource AccentColor}" FontSize="11" FontFamily="Segoe UI Semibold" />
-                        <TextBlock x:Name="NextRaceTitle" Text="-" FontSize="18" FontFamily="Segoe UI Semibold" Margin="0,4,0,6" />
-                        <TextBlock x:Name="NextRaceDetail" Text="-" TextWrapping="Wrap" Foreground="{StaticResource MutedTextColor}" />
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="NESTE LØP" Foreground="{StaticResource AccentColor}" FontSize="11" FontFamily="Segoe UI Semibold" />
+                            <TextBlock x:Name="NextRaceTitle" Text="-" FontSize="18" FontFamily="Segoe UI Semibold" Margin="0,4,0,6" />
+                            <TextBlock x:Name="NextRaceDetail" Text="-" TextWrapping="Wrap" Foreground="{StaticResource MutedTextColor}" />
+                        </StackPanel>
+                        <Button x:Name="CopyRecipeButton" Grid.Column="1" Content="Kopier oppskrift" VerticalAlignment="Top"
+                                Margin="10,0,0,0" Padding="10,6" IsEnabled="False" Click="CopyRecipeButton_Click" />
+                    </Grid>
                 </Border>
 
                 <Border Grid.Row="1" Background="{StaticResource PanelColor}" CornerRadius="10" Padding="12">

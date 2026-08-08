@@ -13,6 +13,9 @@ public class RaceWeekendResult
     public DriverResult? QualifyingResult { get; set; }
     public DriverResult? BestPracticeResult { get; set; }
 
+    /// <summary>Hele racefeltet (Fase 2: grunnlag for mesterskapstabellen), ikke bare spilleren.</summary>
+    public List<DriverResult> FullRaceField { get; set; } = new();
+
     public int TotalParticipants { get; set; }
 
     public int PositionsGainedFromGrid =>

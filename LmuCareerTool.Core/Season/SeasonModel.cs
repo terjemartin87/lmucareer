@@ -1,3 +1,5 @@
+using LmuCareerTool.Models;
+
 namespace LmuCareerTool.Season;
 
 public enum RaceFormat
@@ -21,6 +23,9 @@ public class SeasonEvent
     public int? PointsEarned { get; set; }
     public bool? CarMatched { get; set; }
 
+    /// <summary>Hele feltets resultat for denne runden (Fase 2: mesterskapstabell) - tomt til runden er fullført.</summary>
+    public List<FieldResultEntry> FieldResults { get; set; } = new();
+
     /// <summary>Anbefalt varighet, kun til visning/planlegging - du setter dette opp selv i LMU.</summary>
     public int SuggestedRaceMinutes => Format == RaceFormat.Endurance ? 60 : 25;
 }
@@ -30,6 +35,11 @@ public class SeasonModel
     public int SeasonNumber { get; set; }
     public string CarClass { get; set; } = "";
     public List<SeasonEvent> Events { get; set; } = new();
+
+    /// <summary>Navnene (normalisert, uten "#id"-suffiks) på feltet slik det så ut i den første
+    /// fullførte runden. Låses én gang per sesong, slik at samme AI-motstandere følges gjennom
+    /// hele sesongen for mesterskapstabellen. Nye navn som dukker opp senere telles som reserver.</summary>
+    public List<string> LockedRosterNames { get; set; } = new();
 
     public bool IsComplete => Events.Count > 0 && Events.All(e => e.Completed);
     public SeasonEvent? NextEvent => Events.FirstOrDefault(e => !e.Completed);

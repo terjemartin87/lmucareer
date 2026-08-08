@@ -27,23 +27,30 @@ mesterskapstabell, rating, credits og kontrakter.
 | Område | Status |
 |---|---|
 | Parsing av resultat-XML (P/Q/R, runder, sektorer, incidents) | ✅ Fungerer |
-| Gruppering av Practice/Qualifying/Race til én løpshelg | ✅ Fungerer (kun i minnet) |
+| Gruppering av Practice/Qualifying/Race til én løpshelg | ✅ Overlever nå restart av appen (`PendingWeekendStore`) |
 | XP, nivå, poeng, rating, credits | ✅ Regnes ut |
-| Sesonggenerering (baner, format, vær, bil) | ⚠️ Fungerer, men med feil banenavn |
-| Garasje / valg av klasse og merke | ❌ **Blokkerende feil – appen er ubrukelig** |
-| Bilvalidering mot sesongens bil | ❌ Feiler alltid (feil bilnavn i content-fila) |
-| Mesterskapstabell mot faste rivaler | ❌ Finnes ikke |
-| Sesongavslutning med oppsummering | ⚠️ Minimalt vindu, nås aldri i praksis |
-| Fører-profil / 3D | ❌ Finnes ikke |
-| Installer | ❌ Finnes ikke |
-| Tester | ❌ Finnes ikke |
+| Sesonggenerering (baner, format, vær, bil) | ✅ Verifiserte navn, kun ekte GT3/Hypercar-baner brukes |
+| Garasje / valg av klasse og merke | ✅ Fase 0-fiksene er på plass (se F1-F4 under) |
+| Bilvalidering mot sesongens bil | ✅ Riktige navn + `validate`-kommando (Fase 1) |
+| Oppsett-avvik (feil bane/bil) | ✅ Tydelig varsel + «godkjenn likevel» (Fase 1) |
+| Mesterskapstabell mot faste rivaler | ✅ Fører- og merkemesterskap, fastlåst startfelt (Fase 2) |
+| Sesongavslutning med oppsummering | ⚠️ Minimalt vindu (kun tabell) - full rapport kommer i Fase 4 |
+| Fører-profil / 3D | ❌ Finnes ikke - Fase 5 |
+| Installer | ❌ Finnes ikke - Fase 7 |
+| Tester | ❌ Finnes ikke - Fase 8 |
+
+Fase 0, 1 og 2 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
+bevisst ble utelatt eller forenklet fra den opprinnelige planen.
 
 ---
 
 ## Kjente feil (rotårsaker)
 
+> **Alle F1-F9 under er nå fikset** (F1-F4 i Fase 0, F5-F9 i Fase 1). Beholdt som dokumentasjon
+> av hva som faktisk var galt og hvorfor - nyttig hvis noe av dette regredierer.
+
 Dette er det faktiske svaret på «nedtrekksmenyen har ingen valg, og jeg får ikke lukket eller
-valgt bil». Det er **tre feil som opptrer samtidig** i samme vindu.
+valgt bil». Det var **tre feil som opptrer samtidig** i samme vindu.
 
 ### F1 – Usynlig tekst i alle ComboBox-er (rotårsaken til «ingen valg»)
 
@@ -145,7 +152,8 @@ igjen i kalenderen, eller du kjører runde 5 før runde 3, blir feil runde kredi
 ## Arkitektur og filstruktur
 
 Målbildet etter alle fasene. `[N]` viser hvilken fase filen kommer inn i; filer uten markør
-finnes allerede.
+finnes allerede. **`[0]`, `[1]` og `[2]` er nå bygget** (bortsett fra `Directory.Build.props`,
+`Views/`/`ViewModels/`-flyttingen og `AiResultSynthesizer.cs` - se avvik under hver fase).
 
 ```
 LmuCareerTool/
@@ -279,44 +287,79 @@ Kortest mulig vei fra «ubrukelig» til «kan spilles». Ingen nye funksjoner.
 * **Ferdig når:** du kan skrive inn navnet ditt, velge GT3 + BMW, se en 9-runders kalender,
   lukke og åpne appen igjen uten at noe krasjer.
 
-### Fase 1 – Riktige data og reell validering 🔴
+### Fase 1 – Riktige data og reell validering ✅ Ferdig
 
-* Skriv `game-content.json` på nytt fra verifiserte navn (**F5**, se Vedlegg A).
-* `ContentValidator` + ny konsollkommando `dotnet run -- validate` som skanner hele
-  Results-mappa og rapporterer hvert `CarType`/`TrackVenue` som ikke finnes i content-fila.
-  Da trenger du aldri gjette på skrivemåter igjen.
-* `SessionModeFilter`: kun `<Setting>Race Weekend</Setting>` teller for karrieren.
-  Multiplayer-løp logges som «utenfor karriere» (**F6**).
-* `PreRaceChecklist`: «Neste løp»-kortet blir en fullverdig oppskrift – bane, layout, bil,
-  klasse, antall motstandere, AI-styrke, løpslengde, vær, tid på døgnet. Med en
-  **Kopier-knapp**, så du har det ved siden av deg mens du setter opp i LMU.
-* `SetupValidator`: når resultatet kommer inn, sammenlign **alt** mot oppskriften, ikke bare
-  bilen. Feil bil / feil bane / for lite felt gir en tydelig gul boks:
-  *«Runden ble ikke godkjent: du kjørte Mercedes-AMG LMGT3, sesongen krever Lexus RCF LMGT3.
-  Kjør runden på nytt.»* – med knapp for «Godkjenn likevel» (din egen karriere, dine regler).
-* Match sesongrunde på **bane + at det er neste ikke-fullførte runde** (**F7**).
-* `LmuPathLocator`: finn LMU automatisk via Steam-registry i stedet for hardkodet sti.
-* `PendingWeekendStore`: lagre P/Q-cachen til disk (**F9**).
+* `game-content.json` skrevet på nytt fra verifiserte navn (**F5**, se Vedlegg A) - lagt til
+  Lexus og Mercedes-AMG som nye GT3-merker siden de dukket opp i dine faktiske resultater, og
+  merket LMP2/LMP3 tydelig som uverifiserte (`"_verified": false`) siden ingen resultatfiler
+  finnes for dem ennå.
+* `ContentValidator.cs` + `dotnet run --project LmuCareerTool.Console -- validate [mappe]`
+  skanner hele Results-mappa og rapporterer hvert `CarType`/`TrackVenue` som ikke finnes i
+  content-fila. Kjørt mot dine egne 38 filer: **0 ukjente baner, 0 ukjente biler.**
+* `SessionModeFilter.cs`: kun `<Setting>Race Weekend</Setting>` teller for karrieren.
+  Multiplayer-økter logges som «teller ikke mot karrieren» i loggen, både i appen og
+  konsollverktøyet (**F6**). Testet mot en ekte multiplayer-fil - filtreres korrekt.
+* `PreRaceChecklist.cs`: bygger en kopierbar tekst-oppskrift (bane, klasse/merke, bil, format,
+  varighet, vær) for neste runde. **Kopier oppskrift**-knapp lagt til i "Neste løp"-kortet i
+  appen.
+* `SetupValidator.cs`: sammenligner faktisk bane OG bil mot det sesongen krever, ikke bare
+  bilen som før. Feil oppsett gir en tydelig varselmelding i loggen, og i appen et
+  ja/nei-dialogvindu: *«Godkjenne runden likevel med dette resultatet?»* - trykker du ja,
+  krediteres runden manuelt med `CareerEngine.ApproveDespiteMismatch(...)`. Verifisert med et
+  ekte feil-bil-scenario (kjørte Porsche der sesongen krevde BMW) - ga korrekt 0 XP og riktig
+  varsel.
+* Match sesongrunde på **kun neste ikke-fullførte runde**, ikke et løst banesøk (**F7**) - du
+  kan ikke lenger fullføre runder ute av rekkefølge eller kreditere feil runde ved dupliserte
+  baner.
+* `LmuPathLocator.cs`: finner LMU automatisk via Steam sin registry-nøkkel +
+  `libraryfolders.vdf`, brukes som fallback for standard Results-sti ved førstegangsoppsett.
+* `PendingWeekendStore.cs`: Practice/Qualifying-cachen lagres nå til
+  `pending_career_<navn>.json` og gjenopprettes ved oppstart (**F9**).
 
-### Fase 2 – Mesterskap med faste rivaler 🟡
+**Ikke gjort i konsollverktøyet:** «godkjenn likevel»-flyten er kun bygget i desktop-appen -
+konsollverktøyet viser avviket, men har ingen kommando for å godkjenne det manuelt ennå.
 
-Dette er det som gjør det til en karriere i stedet for en resultatlogg. Og det **går an** –
-LMU bruker sin virkelige WEC-førerstall i «Race Weekend»-modus (Ahmad Al Harthy / Team WRT,
-José María López / Akkodis ASP, Rahel Frey / Iron Dames …), ikke tilfeldige navn.
+### Fase 2 – Mesterskap med faste rivaler ✅ Ferdig
 
-* `FieldRoster`: første AI-løp i sesongen **låser feltet**. Alle navn + team + bil lagres som
-  sesongens startliste.
-* `RosterMatcher`: normaliser navn (fjern `#1234`-suffiks, trim, case-insensitivt) og match mot
-  startlista i påfølgende runder.
-* Håndtering av avvik:
-  * Fører i startlista, ikke i resultatet → **DNS**, 0 poeng.
-  * Ny fører dukker opp → legges til som **reserve**, får poeng fra og med den runden, med en
-    notis i loggen.
-  * Endrer du feltstørrelse midt i sesongen → advarsel om at tabellen blir skjev.
-* `ChampionshipTable`: førermesterskap **og** merkemesterskap, med samme poengskala som deg.
-* `ChampionshipView`: egen fane, med posisjonsendring (▲▼) etter hver runde, og din egen rad
-  uthevet.
-* «Neste løp»-kortet får feltoppsettet som **krav**, ikke forslag, slik at tabellen holder seg.
+Dette er det som gjør det til en karriere i stedet for en resultatlogg, og det **går an** – LMU
+bruker sin virkelige WEC-førerstall i «Race Weekend»-modus (Ahmad Al Harthy / Team WRT,
+José María López / Akkodis ASP, Rahel Frey / Iron Dames …), ikke tilfeldige navn. Verifisert
+med en ekte 25-førers Daytona-startliste: alle 25 navnene ble korrekt låst som sesongens felt.
+
+* `FieldRoster.cs`: den første fullførte runden i sesongen **låser feltet**
+  (`SeasonModel.LockedRosterNames`). Alle navn (normalisert) lagres som sesongens startliste.
+* `RosterMatcher.cs`: normaliserer navn (fjerner `#1234`-suffiks, trim, case-insensitivt) slik
+  at samme sjåfør gjenkjennes selv om LMU endrer suffikset mellom runder.
+* Håndtering av avvik i `ChampionshipTable.cs`:
+  * Fører i den låste rosteren, ikke i rundens resultat → telles som deltatt runde uten poeng
+    (DNS).
+  * Ny fører dukker opp senere → legges automatisk til og merkes **"(reserve)"** i tabellen,
+    får poeng fra og med den runden.
+* `ChampionshipTable.ComputeDriverStandings` / `ComputeManufacturerStandings`: fører- og
+  merkemesterskap fra sesongens lagrede rundedata, med samme poengskala (F1 25-18-15…) som din
+  egen sesongpoengsum. Merke-mapping gjenbruker `game-content.json` sine
+  merke→bil-definisjoner, med bilnavnet som fallback for Hypercar (som ikke har
+  merke-oppsett ennå).
+  Kjøring gjennom hvert runde-resultat er `O(runder × feltstørrelse)`, helt greit for en
+  9-runders sesong.
+* `ChampionshipWindow`: åpnes via en ny **Mesterskap**-knapp i hovedvinduet. Viser
+  førermesterskap (med ▲▼-trend fra forrige runde, din egen rad merket med ★) og
+  merkemesterskap side om side.
+
+**Avvik fra opprinnelig plan** (bevisste forenklinger, ikke glemt):
+* `AiResultSynthesizer` ble aldri en egen fil - DNS-/reserve-håndtering var enkel nok til å
+  høre hjemme direkte i `ChampionshipTable`, en egen "syntese"-abstraksjon ga ingen verdi.
+* `ChampionshipView` er et eget modalt vindu (samme mønster som `RaceDetailWindow`), ikke en
+  fane i hovedvinduet ennå - ekte faneinndeling er en del av Fase 6 (UX-oppussing), som ikke er
+  gjort.
+* «Neste løp»-kortet viser fortsatt feltoppsettet som en **anbefaling**, ikke et håndhevet
+  krav (feltstørrelse valideres ikke av `SetupValidator`) - LMUs AI-feltstørrelse styres uansett
+  av spillets egne baneinnstillinger, ikke noe verktøyet kan tvinge frem.
+* Kun testet med data fra én ekte "Race Weekend"-fil (Daytona, 25 førere) siden det er alt som
+  finnes i din Results-mappe per nå - selve rosterlåsingen og feltlagringen er verifisert, men
+  et fullt sesongforløp med flere runder (DNS, reserver, ▲▼-trend i praksis) er ikke testet mot
+  ekte spilldata ennå. Kjør et par runder til og si ifra hvis noe ser rart ut i
+  mesterskapstabellen.
 
 ### Fase 3 – Transfer-marked på nytt 🟡
 

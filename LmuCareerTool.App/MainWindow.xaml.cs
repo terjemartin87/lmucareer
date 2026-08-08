@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows;
 using LmuCareerTool.Settings;
 using LmuCareerTool.Career;
+using LmuCareerTool.Models;
+using LmuCareerTool.Validation;
 using LmuCareerTool.Watching;
 
 namespace LmuCareerTool.App;
@@ -26,7 +28,8 @@ public partial class MainWindow : Window
 
         var settings = _settingsStore.LoadOrDefault();
         ResultsFolderBox.Text = string.IsNullOrWhiteSpace(settings.ResultsFolder)
-            ? @"C:\Program Files (x86)\Steam\steamapps\common\Le Mans Ultimate\UserData\Log\Results"
+            ? (LmuPathLocator.TryFindResultsFolder()
+               ?? @"C:\Program Files (x86)\Steam\steamapps\common\Le Mans Ultimate\UserData\Log\Results")
             : settings.ResultsFolder;
         PlayerNameBox.Text = settings.PlayerName;
     }
@@ -68,6 +71,7 @@ public partial class MainWindow : Window
             var contentPath = Path.Combine(AppContext.BaseDirectory, "Content", "game-content.json");
             var careerPath = Path.Combine(AppContext.BaseDirectory, $"career_{Sanitize(playerName)}.json");
             _engine = new CareerEngine(playerName, careerPath, contentPath);
+            _engine.SessionIgnored += OnSessionIgnored;
         }
         catch (Exception ex)
         {
@@ -120,6 +124,11 @@ public partial class MainWindow : Window
         Log("Sluttet å overvåke.");
     }
 
+    private void OnSessionIgnored(SessionResult session)
+    {
+        Log($"↪ {session.TrackVenue} ({session.SettingMode}) - teller ikke mot karrieren (kun 'Race Weekend' telles).");
+    }
+
     private void OnNewResultFile(string path)
     {
         if (!_processedFiles.Add(path)) return;
@@ -151,10 +160,26 @@ public partial class MainWindow : Window
 
         var race = weekend.RaceResult;
 
-        if (outcome.CarMismatch && outcome.MatchedEvent != null)
+        if (outcome.Issues.Count > 0)
         {
-            Log($"⚠ Feil bil brukt på {weekend.TrackVenue}! Forventet {outcome.MatchedEvent.AssignedCar}, " +
-                $"du kjørte {race.CarType}. Ingen XP gitt - kjør runden på nytt med riktig bil.");
+            foreach (var issue in outcome.Issues)
+                Log($"⚠ {issue}");
+
+            if (outcome.CanApproveAnyway)
+            {
+                var result = MessageBox.Show(this,
+                    $"{string.Join("\n\n", outcome.Issues)}\n\nGodkjenne runden likevel med dette resultatet (P{race.Position})?",
+                    "Oppsett stemte ikke", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    var approved = _engine!.ApproveDespiteMismatch(outcome);
+                    Log($"✅ Godkjent manuelt: {weekend.TrackVenue} - +{approved.XpEarned} XP, +{approved.PointsEarned} poeng, " +
+                        $"Rating {approved.RatingDelta:+0;-0;0}, +{approved.CreditsEarned} cr");
+                    HandlePostOutcomeEffects(approved);
+                    return;
+                }
+            }
         }
         else
         {
@@ -162,6 +187,11 @@ public partial class MainWindow : Window
                 $"+{outcome.XpEarned} XP, +{outcome.PointsEarned} poeng, Rating {outcome.RatingDelta:+0;-0;0}, +{outcome.CreditsEarned} cr");
         }
 
+        HandlePostOutcomeEffects(outcome);
+    }
+
+    private void HandlePostOutcomeEffects(WeekendProcessingOutcome outcome)
+    {
         foreach (var unlocked in outcome.NewUnlocks)
             Log($"🔓 Ny klasse låst opp: {unlocked}!");
 
@@ -195,6 +225,28 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ChampionshipButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv karriere", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new ChampionshipWindow(_engine) { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void CopyRecipeButton_Click(object sender, RoutedEventArgs e)
+    {
+        var next = _engine?.Career.CurrentSeason?.NextEvent;
+        if (_engine == null || next == null) return;
+
+        var text = PreRaceChecklist.BuildRecipeText(next, _engine.Career.CurrentClass, _engine.Career.CurrentManufacturer);
+        Clipboard.SetText(text);
+        Log("📋 Oppskrift for neste løp kopiert til utklippstavlen.");
+    }
+
     private void RefreshHeader()
     {
         if (_engine == null) return;
@@ -217,6 +269,7 @@ public partial class MainWindow : Window
             _seasonRows.Clear();
             NextRaceTitle.Text = "Venter på valg av klasse...";
             NextRaceDetail.Text = "-";
+            CopyRecipeButton.IsEnabled = false;
             return;
         }
 
@@ -231,6 +284,11 @@ public partial class MainWindow : Window
             NextRaceTitle.Text = $"Runde {next.RoundNumber}: {next.TrackVenue} ({next.Format})";
             NextRaceDetail.Text = $"Sett opp i LMU: {_engine!.Career.CurrentClass} - {next.AssignedCar}   ·   " +
                                    $"~{next.SuggestedRaceMinutes} min race   ·   Vær: {next.AssignedWeather}";
+            CopyRecipeButton.IsEnabled = true;
+        }
+        else
+        {
+            CopyRecipeButton.IsEnabled = false;
         }
     }
 

@@ -1,4 +1,5 @@
 using LmuCareerTool.Career;
+using LmuCareerTool.Content;
 using LmuCareerTool.Watching;
 
 namespace LmuCareerTool.ConsoleApp;
@@ -20,8 +21,17 @@ public static class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
+        if (args.Length >= 1 && args[0].Equals("validate", StringComparison.OrdinalIgnoreCase))
+        {
+            var folder = args.Length >= 2 ? args[1] : ResultsFolder;
+            RunValidate(folder);
+            return;
+        }
+
         var contentPath = Path.Combine(AppContext.BaseDirectory, "Content", "game-content.json");
         _engine = new CareerEngine(PlayerName, CareerFilePath, contentPath);
+        _engine.SessionIgnored += session =>
+            Console.WriteLine($"↪ {session.TrackVenue} ({session.SettingMode}) - teller ikke mot karrieren (kun 'Race Weekend' telles).");
 
         if (args.Length >= 2 && args[0].Equals("replay", StringComparison.OrdinalIgnoreCase))
         {
@@ -60,6 +70,40 @@ public static class Program
         }
 
         RunLive();
+    }
+
+    private static void RunValidate(string folder)
+    {
+        Console.WriteLine($"Validerer game-content.json mot resultatfiler i:\n  {folder}\n");
+
+        if (!Directory.Exists(folder))
+        {
+            Console.WriteLine("Fant ikke mappen. Sjekk stien, eller oppgi en annen: dotnet run -- validate <mappe>");
+            return;
+        }
+
+        var contentPath = Path.Combine(AppContext.BaseDirectory, "Content", "game-content.json");
+        var content = ContentLoader.Load(contentPath);
+        var report = ContentValidator.Validate(content, folder);
+
+        Console.WriteLine($"Skannet {report.FilesScanned} fil(er) ({report.FilesFailed} kunne ikke leses).\n");
+
+        Console.WriteLine($"--- Baner: {report.KnownTrackVenues.Count} kjente, {report.UnknownTrackVenues.Count} ukjente ---");
+        foreach (var t in report.UnknownTrackVenues) Console.WriteLine($"  ⚠ UKJENT BANE: \"{t}\"");
+
+        Console.WriteLine();
+        Console.WriteLine($"--- Biler: {report.KnownCarTypes.Count} kjente, {report.UnknownCarTypes.Count} ukjente ---");
+        foreach (var c in report.UnknownCarTypes) Console.WriteLine($"  ⚠ UKJENT BIL: \"{c}\"");
+
+        Console.WriteLine();
+        if (report.UnknownCarTypes.Count == 0 && report.UnknownTrackVenues.Count == 0)
+        {
+            Console.WriteLine("✅ Alt som ble funnet i resultatfilene dine matcher game-content.json.");
+        }
+        else
+        {
+            Console.WriteLine("Legg de ukjente navnene til i game-content.json - kopier skrivemåten EKSAKT som over.");
+        }
     }
 
     private static void RunReplay(string path)
@@ -191,11 +235,16 @@ public static class Program
         Console.WriteLine($"Beste sektorer: S1 {FormatTime(race.BestSector1)}  S2 {FormatTime(race.BestSector2)}  S3 {FormatTime(race.BestSector3)}");
         Console.WriteLine($"Hendelser:   {race.IncidentCount} incidents, {race.PenaltyCount} straffer");
 
-        if (outcome.CarMismatch && outcome.MatchedEvent != null)
+        if (outcome.Issues.Count > 0)
         {
             Console.WriteLine();
-            Console.WriteLine($"⚠️  FEIL BIL BRUKT for sesongrunden! Forventet: {outcome.MatchedEvent.AssignedCar}, du kjørte: {race.CarType}");
-            Console.WriteLine("    Ingen XP/Rating/Credits gitt - kjør den på nytt med riktig bil.");
+            foreach (var issue in outcome.Issues)
+                Console.WriteLine($"⚠️  {issue}");
+
+            if (outcome.CanApproveAnyway)
+            {
+                Console.WriteLine("    (Kan godkjennes manuelt i desktop-appen - ikke støttet i konsollverktøyet ennå.)");
+            }
         }
         else
         {

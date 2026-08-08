@@ -21,6 +21,24 @@ public class WeekendGrouper
         _weekendWindow = weekendWindow ?? TimeSpan.FromHours(6);
     }
 
+    /// <summary>Ventende Practice-økter per bane, til persistering (PendingWeekendStore).</summary>
+    public IReadOnlyDictionary<string, SessionResult> PendingPractice => _lastPracticeByTrack;
+
+    /// <summary>Ventende Qualifying-økter per bane, til persistering (PendingWeekendStore).</summary>
+    public IReadOnlyDictionary<string, SessionResult> PendingQualifying => _lastQualifyingByTrack;
+
+    /// <summary>Gjenoppretter ventende P/Q-økter fra disk, slik at en helg overlever at appen restartes.</summary>
+    public void RestoreState(
+        IDictionary<string, SessionResult> practice,
+        IDictionary<string, SessionResult> qualifying)
+    {
+        _lastPracticeByTrack.Clear();
+        foreach (var kv in practice) _lastPracticeByTrack[kv.Key] = kv.Value;
+
+        _lastQualifyingByTrack.Clear();
+        foreach (var kv in qualifying) _lastQualifyingByTrack[kv.Key] = kv.Value;
+    }
+
     /// <summary>
     /// Mater inn en nylig parset sesjon. Returnerer en komplett RaceWeekendResult
     /// hvis dette var Race-sesjonen som fullfører en helg for spilleren, ellers null.
@@ -56,6 +74,7 @@ public class WeekendGrouper
             TrackVenue = race.TrackVenue,
             CompletedAtUtc = race.SessionTimeUtc,
             RaceResult = race.FindPlayer(playerName),
+            FullRaceField = race.Drivers,
             TotalParticipants = race.Drivers.Count
         };
 
