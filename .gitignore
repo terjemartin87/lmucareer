@@ -1,0 +1,17 @@
+## .NET
+bin/
+obj/
+*.user
+
+## Rider/VS
+.vs/
+.idea/
+*.suo
+
+## Runtime data that shouldn't be committed
+**/settings.json
+**/career_*.json
+
+## OS
+.DS_Store
+Thumbs.db

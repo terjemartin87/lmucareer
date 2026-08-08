@@ -1,0 +1,58 @@
+{
+  "classes": [
+    {
+      "name": "GT3", "order": 1, "xpThreshold": 0,
+      "manufacturers": [
+        { "name": "BMW", "cars": ["BMW M4 LMGT3"], "startUnlocked": true, "ratingRequired": 0, "unlockCost": 0 },
+        { "name": "Ford", "cars": ["Ford Mustang LMGT3"], "startUnlocked": true, "ratingRequired": 0, "unlockCost": 0 },
+        { "name": "Corvette", "cars": ["Corvette Z06 LMGT3"], "startUnlocked": false, "ratingRequired": 55, "unlockCost": 3000 },
+        { "name": "Lamborghini", "cars": ["Lamborghini Huracan LMGT3"], "startUnlocked": false, "ratingRequired": 60, "unlockCost": 3500 },
+        { "name": "McLaren", "cars": ["McLaren 720S LMGT3"], "startUnlocked": false, "ratingRequired": 65, "unlockCost": 4000 },
+        { "name": "Aston Martin", "cars": ["Aston Martin Vantage LMGT3"], "startUnlocked": false, "ratingRequired": 70, "unlockCost": 4500 },
+        { "name": "Ferrari", "cars": ["Ferrari 296 LMGT3"], "startUnlocked": false, "ratingRequired": 80, "unlockCost": 6000 },
+        { "name": "Porsche", "cars": ["Porsche 911 GT3 R LMGT3"], "startUnlocked": false, "ratingRequired": 88, "unlockCost": 7500 }
+      ]
+    },
+    { "name": "LMP3", "order": 2, "xpThreshold": 500, "cars": [
+      "Ligier JS P320",
+      "Duqueine D08",
+      "Duqueine D09"
+    ] },
+    { "name": "LMP2", "order": 3, "xpThreshold": 1200, "cars": [
+      "Oreca 07"
+    ] },
+    { "name": "Hypercar", "order": 4, "xpThreshold": 2500, "cars": [
+      "Porsche 963",
+      "Ferrari 499P",
+      "Toyota GR010",
+      "Cadillac V-Series.R",
+      "Peugeot 9x8",
+      "BMW M Hybrid V8",
+      "Genesis GMR-001"
+    ] }
+  ],
+  "tracks": [
+    "Circuit de la Sarthe",
+    "Spa-Francorchamps",
+    "Sebring International Raceway",
+    "Bahrain International Circuit",
+    "Fuji Speedway",
+    "Portimao",
+    "Interlagos",
+    "Circuit of the Americas",
+    "Monza",
+    "Daytona International Speedway",
+    "WeatherTech Raceway Laguna Seca",
+    "Circuit de Barcelona-Catalunya",
+    "Imola"
+  ],
+  "weatherOptions": [
+    "Clear",
+    "Partly Cloudy",
+    "Overcast",
+    "Light Rain (dynamic)",
+    "Heavy Rain (dynamic)",
+    "Dynamic (full weather slots on)"
+  ],
+  "_comment": "Bane-, bil- og merkenavn er satt sammen manuelt. Kun GT3 har et fullt merke/transfer-marked-oppsett - de andre klassene bruker fortsatt en flat 'cars'-liste uten merkepolitikk. Bruk EKSAKT samme skrivemåte som <TrackVenue>/<CarType> i resultatfilene dine. ratingRequired/unlockCost kan justeres fritt for å endre vanskelighetsgrad på overgangene."
+}

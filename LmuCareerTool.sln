@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LmuCareerTool.Core", "LmuCareerTool.Core\LmuCareerTool.Core.csproj", "{5CF1A1AA-B45E-46BC-AFB3-F35402FC921A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LmuCareerTool.Console", "LmuCareerTool.Console\LmuCareerTool.Console.csproj", "{5DF2BB10-7816-4885-B3A0-B71E961F818A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LmuCareerTool.App", "LmuCareerTool.App\LmuCareerTool.App.csproj", "{F645B837-66A7-4125-83E7-45F69148B995}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CF1A1AA-B45E-46BC-AFB3-F35402FC921A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CF1A1AA-B45E-46BC-AFB3-F35402FC921A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CF1A1AA-B45E-46BC-AFB3-F35402FC921A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CF1A1AA-B45E-46BC-AFB3-F35402FC921A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DF2BB10-7816-4885-B3A0-B71E961F818A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DF2BB10-7816-4885-B3A0-B71E961F818A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DF2BB10-7816-4885-B3A0-B71E961F818A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DF2BB10-7816-4885-B3A0-B71E961F818A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F645B837-66A7-4125-83E7-45F69148B995}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F645B837-66A7-4125-83E7-45F69148B995}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F645B837-66A7-4125-83E7-45F69148B995}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F645B837-66A7-4125-83E7-45F69148B995}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
