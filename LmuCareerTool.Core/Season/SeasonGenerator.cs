@@ -17,7 +17,8 @@ public static class SeasonGenerator
         int seasonNumber,
         int raceCount = 9,
         double enduranceRatio = 0.35,
-        int? randomSeed = null)
+        int? randomSeed = null,
+        string? explicitCar = null)
     {
         if (content.Tracks.Count == 0)
             throw new InvalidOperationException("Ingen baner definert i game-content.json.");
@@ -28,7 +29,12 @@ public static class SeasonGenerator
         var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : new Random();
 
         List<string> availableCars;
-        if (classDef.Manufacturers.Count > 0)
+        if (!string.IsNullOrWhiteSpace(explicitCar))
+        {
+            // Privatlag/fri-agent: bilen er allerede bestemt av tilbudet, ikke av et merke.
+            availableCars = new List<string> { explicitCar };
+        }
+        else if (classDef.Manufacturers.Count > 0)
         {
             var manufacturerDef = classDef.Manufacturers.FirstOrDefault(m =>
                 m.Name.Equals(manufacturer, StringComparison.OrdinalIgnoreCase));

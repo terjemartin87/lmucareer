@@ -3,18 +3,10 @@ using LmuCareerTool.Content;
 using LmuCareerTool.Models;
 using LmuCareerTool.Parsing;
 using LmuCareerTool.Season;
+using LmuCareerTool.Transfers;
 using LmuCareerTool.Validation;
 
 namespace LmuCareerTool.Career;
-
-/// <summary>Visningsklar info om ett merke for UI-en (Garasjen).</summary>
-public class ManufacturerStatus
-{
-    public string Name { get; set; } = "";
-    public bool Unlocked { get; set; }
-    public int RatingRequired { get; set; }
-    public int UnlockCost { get; set; }
-}
 
 /// <summary>Resultatet av at en fullført løpshelg er behandlet, klar til visning i UI/konsoll.</summary>
 public class WeekendProcessingOutcome
@@ -24,6 +16,9 @@ public class WeekendProcessingOutcome
     public int PointsEarned { get; set; }
     public int RatingDelta { get; set; }
     public int CreditsEarned { get; set; }
+
+    /// <summary>Kontraktlønn utbetalt for denne runden (0 hvis ingen aktiv kontrakt med lønn).</summary>
+    public int ContractSalaryEarned { get; set; }
 
     /// <summary>Runden som faktisk ble kreditert - null hvis ingen sesongrunde ble fullført.</summary>
     public SeasonEvent? MatchedEvent { get; set; }
@@ -43,17 +38,22 @@ public class WeekendProcessingOutcome
         (CarMismatch || TrackMismatch) && CandidateEvent != null && Weekend.RaceResult != null;
 
     public List<string> NewUnlocks { get; set; } = new();
-    public List<string> NewManufacturerOffers { get; set; } = new();
 
-    /// <summary>Satt hvis dette løpet var siste runde i sesongen - UI bør da vise sesongoppsummering + garasje.</summary>
+    /// <summary>Satt hvis dette løpet var siste runde i sesongen - UI bør da vise sesongoppsummering + overgangsvindu.</summary>
     public bool SeasonJustCompleted { get; set; }
     public SeasonModel? CompletedSeason { get; set; }
+
+    /// <summary>Merket sa deg opp fordi sesongmålet ikke ble innfridd.</summary>
+    public bool DroppedByManufacturer { get; set; }
+
+    /// <summary>Kontrakten løp naturlig ut (siste sesong av avtalt lengde), uten oppsigelse.</summary>
+    public bool ContractExpired { get; set; }
 }
 
 /// <summary>
 /// Samler all karriere-logikk (parsing, gruppering, XP, poeng, rating, credits, sesong, bilkrav,
-/// mesterskapstabell) på ett sted, slik at både konsoll-testverktøyet og WPF-UI-en bruker
-/// nøyaktig samme logikk.
+/// mesterskapstabell, kontrakter) på ett sted, slik at både konsoll-testverktøyet og WPF-UI-en
+/// bruker nøyaktig samme logikk.
 /// </summary>
 public class CareerEngine
 {
@@ -88,51 +88,42 @@ public class CareerEngine
         var pendingState = _pendingStore.LoadOrEmpty();
         _grouper.RestoreState(pendingState.Practice, pendingState.Qualifying);
 
-        // Sørg for at startmerkene i gjeldende klasse er tilgjengelige, uansett om en sesong er i gang.
-        ManufacturerUnlockService.EnsureStartingManufacturersUnlocked(Career, Content, Career.CurrentClass);
-        _store.Save(Career);
-
-        // Merk: vi genererer IKKE en sesong automatisk her lenger. UI-en (Garasjen) må alltid
-        // be spilleren velge klasse + merke eksplisitt - både ved aller første oppstart og hver
+        // Merk: vi genererer IKKE en sesong automatisk her. UI-en (overgangsvinduet) må alltid
+        // be spilleren signere et tilbud eksplisitt - både ved aller første oppstart og hver
         // gang en sesong er fullført. Dette holder "signering"-flyten konsistent overalt.
     }
 
-    /// <summary>Merker (låst/opplåst/krav) for en gitt klasse, til visning i Garasjen.</summary>
-    public List<ManufacturerStatus> GetManufacturersForClass(string carClass)
-    {
-        ManufacturerUnlockService.EnsureStartingManufacturersUnlocked(Career, Content, carClass);
+    /// <summary>Konkrete kontraktstilbud for en gitt klasse, til visning i overgangsvinduet.
+    /// Vurderer form/renhet mot forrige fullførte sesong (om noen), og fornyelse hvis du
+    /// allerede har kontrakt med et merke i klassen og innfridde forrige sesongmål.</summary>
+    public List<ContractOffer> GetContractOffers(string carClass) =>
+        OfferGenerator.GenerateOffers(Career, Content, carClass, Career.SeasonHistory.LastOrDefault(), _playerName);
 
-        var classDef = Content.Classes.FirstOrDefault(c => c.Name.Equals(carClass, StringComparison.OrdinalIgnoreCase));
-        if (classDef == null) return new List<ManufacturerStatus>();
-
-        var unlocked = Career.UnlockedManufacturers.TryGetValue(carClass, out var list) ? list : new List<string>();
-
-        return classDef.Manufacturers.Select(m => new ManufacturerStatus
-        {
-            Name = m.Name,
-            Unlocked = unlocked.Contains(m.Name),
-            RatingRequired = m.RatingRequired,
-            UnlockCost = m.UnlockCost
-        }).ToList();
-    }
-
-    /// <summary>Kjøp deg inn hos et låst merke med credits (ignorerer Rating-kravet). Returnerer true ved suksess.</summary>
-    public bool TryBuyManufacturer(string carClass, string manufacturerName)
-    {
-        var success = ManufacturerUnlockService.TryBuyManufacturer(Career, Content, carClass, manufacturerName);
-        if (success) _store.Save(Career);
-        return success;
-    }
-
-    /// <summary>Genererer og starter en ny sesong for valgt klasse (og evt. merke). Kalles fra UI-en (Garasjen).</summary>
-    public void StartNewSeason(string carClass, string? manufacturer)
+    /// <summary>Signerer et tilbud og starter sesongen umiddelbart. Returnerer false hvis du ikke
+    /// hadde råd til engangskostnaden (kun privatlag-setet har en).</summary>
+    public bool SignContract(ContractOffer offer)
     {
         var seasonNumber = Career.SeasonHistory.Count + 1;
-        Career.CurrentClass = carClass;
-        Career.CurrentManufacturer = manufacturer;
+        if (!ContractService.TrySign(Career, offer, seasonNumber)) return false;
+
+        var manufacturerForCarPool = offer.IsPrivateerSeat || offer.IsFreeAgent ? null : offer.Manufacturer;
+        var explicitCar = offer.IsPrivateerSeat ? offer.Car : null;
+
         Career.CurrentSeason = SeasonGenerator.Generate(
-            Content, carClass, manufacturer, seasonNumber, RacesPerSeason, EnduranceRatio);
+            Content, offer.CarClass, manufacturerForCarPool, seasonNumber, RacesPerSeason, EnduranceRatio,
+            explicitCar: explicitCar);
+
         _store.Save(Career);
+        return true;
+    }
+
+    /// <summary>Sier opp gjeldende kontrakt mot en bruddsum i credits. Returnerer false hvis du
+    /// ikke har råd, eller hvis du ikke har en oppsigelig kontrakt (privatlag/fri klasse/ingen).</summary>
+    public bool TryTerminateContract()
+    {
+        var success = ContractService.TryTerminateEarly(Career);
+        if (success) _store.Save(Career);
+        return success;
     }
 
     /// <summary>Fører- og merkemesterskapstabellen for gjeldende (eller angitt) sesong.</summary>
@@ -192,7 +183,7 @@ public class CareerEngine
         var weekend = previous.Weekend;
         var matchedEvent = previous.CandidateEvent;
 
-        var (xp, points, ratingDelta, creditsEarned) = CompleteRound(matchedEvent, weekend);
+        var (xp, points, ratingDelta, creditsEarned, salaryEarned) = CompleteRound(matchedEvent, weekend);
 
         // Oppdater den siste historikk-oppføringen for denne helgen i stedet for å legge til en ny.
         var historyEntry = Career.RaceHistory.LastOrDefault(h =>
@@ -221,10 +212,10 @@ public class CareerEngine
             PointsEarned = points,
             RatingDelta = ratingDelta,
             CreditsEarned = creditsEarned,
+            ContractSalaryEarned = salaryEarned,
         };
 
         outcome.NewUnlocks = ClassUnlockService.CheckForNewUnlocks(Career, Content);
-        outcome.NewManufacturerOffers = ManufacturerUnlockService.CheckForNewOffers(Career, Content, Career.CurrentClass);
 
         CompleteSeasonIfFinished(outcome);
 
@@ -260,6 +251,7 @@ public class CareerEngine
         var points = 0;
         var ratingDelta = 0;
         var creditsEarned = 0;
+        var salaryEarned = 0;
 
         if (matchedEvent != null)
         {
@@ -273,7 +265,7 @@ public class CareerEngine
             }
             else
             {
-                (xp, points, ratingDelta, creditsEarned) = CompleteRound(matchedEvent, weekend);
+                (xp, points, ratingDelta, creditsEarned, salaryEarned) = CompleteRound(matchedEvent, weekend);
             }
         }
 
@@ -283,6 +275,7 @@ public class CareerEngine
         outcome.PointsEarned = points;
         outcome.RatingDelta = ratingDelta;
         outcome.CreditsEarned = creditsEarned;
+        outcome.ContractSalaryEarned = salaryEarned;
 
         Career.RaceHistory.Add(new CareerRaceEntry
         {
@@ -296,6 +289,7 @@ public class CareerEngine
             TotalParticipants = weekend.TotalParticipants,
             FinishStatus = race.FinishStatus,
             IncidentCount = race.IncidentCount,
+            PenaltyCount = race.PenaltyCount,
             XpEarned = xp,
             PointsEarned = points,
 
@@ -322,7 +316,6 @@ public class CareerEngine
         Career.Credits += creditsEarned;
 
         outcome.NewUnlocks = ClassUnlockService.CheckForNewUnlocks(Career, Content);
-        outcome.NewManufacturerOffers = ManufacturerUnlockService.CheckForNewOffers(Career, Content, Career.CurrentClass);
 
         CompleteSeasonIfFinished(outcome);
 
@@ -332,8 +325,9 @@ public class CareerEngine
     }
 
     /// <summary>Regner ut belønninger for en fullført, matchende runde og oppdaterer SeasonEvent
-    /// (inkl. mesterskapsfeltet og en evt. rosterlåsing). Delt mellom normal- og godkjenn-likevel-flyten.</summary>
-    private (int xp, int points, int ratingDelta, int creditsEarned) CompleteRound(
+    /// (inkl. mesterskapsfeltet, en evt. rosterlåsing, og kontraktlønn). Delt mellom normal- og
+    /// godkjenn-likevel-flyten.</summary>
+    private (int xp, int points, int ratingDelta, int creditsEarned, int salaryEarned) CompleteRound(
         SeasonEvent matchedEvent, RaceWeekendResult weekend)
     {
         var race = weekend.RaceResult!;
@@ -341,6 +335,7 @@ public class CareerEngine
         var points = PointsCalculator.PointsForPosition(race.Position);
         var ratingDelta = RatingCalculator.CalculateDelta(weekend);
         var creditsEarned = CreditsCalculator.Calculate(weekend);
+        var salaryEarned = ContractService.PaySalaryForRound(Career);
 
         matchedEvent.CarMatched = true;
         matchedEvent.Completed = true;
@@ -365,18 +360,25 @@ public class CareerEngine
         if (Career.CurrentSeason != null)
             FieldRoster.LockIfNeeded(Career.CurrentSeason, matchedEvent.FieldResults);
 
-        return (xp, points, ratingDelta, creditsEarned);
+        return (xp, points, ratingDelta, creditsEarned, salaryEarned);
     }
 
     private void CompleteSeasonIfFinished(WeekendProcessingOutcome outcome)
     {
-        if (Career.CurrentSeason?.IsComplete == true)
+        if (Career.CurrentSeason?.IsComplete != true) return;
+
+        outcome.SeasonJustCompleted = true;
+        outcome.CompletedSeason = Career.CurrentSeason;
+
+        if (Career.CurrentContract != null)
         {
-            outcome.SeasonJustCompleted = true;
-            outcome.CompletedSeason = Career.CurrentSeason;
-            Career.SeasonHistory.Add(Career.CurrentSeason);
-            Career.CurrentSeason = null; // UI må be spilleren velge klasse+merke (StartNewSeason) før neste runde vises
+            var dropped = ContractService.ApplySeasonResult(Career, Career.CurrentSeason, _playerName);
+            outcome.DroppedByManufacturer = dropped;
+            outcome.ContractExpired = !dropped && Career.CurrentContract == null;
         }
+
+        Career.SeasonHistory.Add(Career.CurrentSeason);
+        Career.CurrentSeason = null; // UI må be spilleren signere et nytt tilbud før neste runde vises
     }
 
     private void PersistPendingState()

@@ -45,27 +45,15 @@ public static class Program
             return;
         }
 
-        if (args.Length >= 2 && args[0].Equals("manufacturers", StringComparison.OrdinalIgnoreCase))
+        if (args.Length >= 2 && args[0].Equals("offers", StringComparison.OrdinalIgnoreCase))
         {
-            PrintManufacturers(args[1]);
+            PrintOffers(args[1]);
             return;
         }
 
-        if (args.Length >= 2 && args[0].Equals("newseason", StringComparison.OrdinalIgnoreCase))
+        if (args.Length >= 3 && args[0].Equals("sign", StringComparison.OrdinalIgnoreCase))
         {
-            var manufacturer = args.Length >= 3 ? args[2] : null;
-            _engine.StartNewSeason(args[1], manufacturer);
-            Console.WriteLine($"Ny sesong startet for klasse {args[1]}{(manufacturer != null ? $" hos {manufacturer}" : "")}.");
-            PrintSeasonTable();
-            return;
-        }
-
-        if (args.Length >= 3 && args[0].Equals("buy", StringComparison.OrdinalIgnoreCase))
-        {
-            var success = _engine.TryBuyManufacturer(args[1], args[2]);
-            Console.WriteLine(success
-                ? $"Kjøpte deg inn hos {args[2]} i {args[1]}! Credits igjen: {_engine.Career.Credits}"
-                : "Kjøp feilet - sjekk at merket finnes og at du har nok credits.");
+            SignOffer(args[1], args[2]);
             return;
         }
 
@@ -135,8 +123,8 @@ public static class Program
         {
             Console.WriteLine();
             Console.WriteLine("Ingen aktiv sesong. Start en med:");
-            Console.WriteLine($"  dotnet run -- manufacturers {career.CurrentClass}   (se tilgjengelige merker)");
-            Console.WriteLine($"  dotnet run -- newseason {career.CurrentClass} <Merke>");
+            Console.WriteLine($"  dotnet run -- offers {career.CurrentClass}   (se tilgjengelige kontraktstilbud)");
+            Console.WriteLine($"  dotnet run -- sign {career.CurrentClass} <nummer>");
             return;
         }
 
@@ -177,21 +165,46 @@ public static class Program
         Console.ReadLine();
     }
 
-    private static void PrintManufacturers(string carClass)
+    private static void PrintOffers(string carClass)
     {
-        var manufacturers = _engine.GetManufacturersForClass(carClass);
-        if (manufacturers.Count == 0)
+        var offers = _engine.GetContractOffers(carClass);
+        if (offers.Count == 0)
         {
-            Console.WriteLine($"Klassen '{carClass}' har ingen merke-oppsett (bruker flat billiste i stedet).");
+            Console.WriteLine($"Ingen tilbud tilgjengelig for klassen '{carClass}' akkurat nå.");
             return;
         }
 
-        Console.WriteLine($"--- Merker i {carClass} (din Rating: {_engine.Career.DriverRating}, credits: {_engine.Career.Credits}) ---");
-        foreach (var m in manufacturers)
+        Console.WriteLine($"--- Tilbud i {carClass} (Rating: {_engine.Career.DriverRating}, credits: {_engine.Career.Credits}) ---");
+        for (var i = 0; i < offers.Count; i++)
         {
-            var status = m.Unlocked ? "OPPLÅST" : $"LÅST (krever Rating {m.RatingRequired}, eller kjøp for {m.UnlockCost} credits)";
-            Console.WriteLine($"  {m.Name,-15} {status}");
+            var o = offers[i];
+            var label = o.IsPrivateerSeat ? "Privatlag" : o.IsFreeAgent ? "Fri kjøring" : o.Manufacturer;
+            var badge = o.IsRenewal ? "FORNYELSE" : o.IsPrivateerSeat ? $"BETALT SETE ({o.SigningCost} cr)" : o.IsFreeAgent ? "FRI KLASSE" : $"interesse {o.InterestScore}";
+            Console.WriteLine($"  [{i}] {label,-15} {badge,-22} {o.LengthSeasons} sesong(er)   {o.SalaryPerRound} cr/runde   {o.GoalDescription}");
+            Console.WriteLine($"       \"{o.Reasoning}\"");
         }
+        Console.WriteLine();
+        Console.WriteLine($"Signer med: dotnet run -- sign {carClass} <nummer>");
+    }
+
+    private static void SignOffer(string carClass, string indexArg)
+    {
+        var offers = _engine.GetContractOffers(carClass);
+        if (!int.TryParse(indexArg, out var index) || index < 0 || index >= offers.Count)
+        {
+            Console.WriteLine($"Ugyldig nummer. Kjør 'dotnet run -- offers {carClass}' for å se gyldige valg.");
+            return;
+        }
+
+        var offer = offers[index];
+        if (!_engine.SignContract(offer))
+        {
+            Console.WriteLine("Signering feilet - ikke nok credits til engangskostnaden.");
+            return;
+        }
+
+        Console.WriteLine($"Signert! {(string.IsNullOrEmpty(offer.Manufacturer) ? "Fri kjøring" : offer.Manufacturer)} i {carClass}.");
+        PrintSeasonTable();
     }
 
     private static void PrintOutcome(WeekendProcessingOutcome outcome)
@@ -248,7 +261,8 @@ public static class Program
         }
         else
         {
-            Console.WriteLine($"XP: +{outcome.XpEarned}   Poeng: +{outcome.PointsEarned}   Rating: {outcome.RatingDelta:+0;-0;0}   Credits: +{outcome.CreditsEarned}");
+            Console.WriteLine($"XP: +{outcome.XpEarned}   Poeng: +{outcome.PointsEarned}   Rating: {outcome.RatingDelta:+0;-0;0}   Credits: +{outcome.CreditsEarned}" +
+                (outcome.ContractSalaryEarned > 0 ? $"   Kontraktlønn: +{outcome.ContractSalaryEarned}" : ""));
         }
 
         Console.WriteLine($"Total XP: {_engine.Career.TotalXp} (Nivå {_engine.Career.Level})   Rating: {_engine.Career.DriverRating}   Credits: {_engine.Career.Credits}");
@@ -261,14 +275,17 @@ public static class Program
         foreach (var unlocked in outcome.NewUnlocks)
             Console.WriteLine($"🔓 NY KLASSE LÅST OPP: {unlocked}!");
 
-        foreach (var offer in outcome.NewManufacturerOffers)
-            Console.WriteLine($"📩 {offer} har lagt merke til deg og tilbyr deg kontrakt! (bruk 'newseason' neste sesong for å bytte)");
-
         if (outcome.SeasonJustCompleted && outcome.CompletedSeason is { } completed)
         {
             Console.WriteLine();
             Console.WriteLine($"🏆 SESONG {completed.SeasonNumber} FULLFØRT! Sammenlagt: {completed.TotalPoints} poeng, {completed.TotalXp} XP, beste resultat P{completed.BestFinish}.");
-            Console.WriteLine($"    Kjør 'dotnet run -- manufacturers <Klasse>' for å se merker, deretter 'dotnet run -- newseason <Klasse> <Merke>'.");
+
+            if (outcome.DroppedByManufacturer)
+                Console.WriteLine("📉 Merket var ikke fornøyd med resultatene og har sagt opp kontrakten din.");
+            else if (outcome.ContractExpired)
+                Console.WriteLine("📄 Kontrakten din har løpt ut.");
+
+            Console.WriteLine($"    Kjør 'dotnet run -- offers <Klasse>' for å se tilbud, deretter 'dotnet run -- sign <Klasse> <nummer>'.");
         }
 
         Console.WriteLine("=========================================");

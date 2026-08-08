@@ -1,4 +1,5 @@
 using LmuCareerTool.Season;
+using LmuCareerTool.Transfers;
 
 namespace LmuCareerTool.Models;
 
@@ -15,6 +16,7 @@ public class CareerRaceEntry
     public int TotalParticipants { get; set; }
     public string FinishStatus { get; set; } = "";
     public int IncidentCount { get; set; }
+    public int PenaltyCount { get; set; }
     public int XpEarned { get; set; }
     public int PointsEarned { get; set; }
 
@@ -43,12 +45,13 @@ public class CareerProfile
     public int TotalXp { get; set; }
     public int Level { get; set; } = 1;
 
-    public int DriverRating { get; set; } = 50; // 0-100, styrer hvilke merker som vil ha deg
-    public int Credits { get; set; } = 0;       // "penger" - kan brukes til å kjøpe seg inn hos et merke
+    public int DriverRating { get; set; } = 50; // 0-100, styrer hvor attraktiv du er for merker
+    public int Credits { get; set; } = 0;       // "penger" - lønn, bruddsummer, privatlag-seter
     public string? CurrentManufacturer { get; set; }
 
-    /// <summary>Hvilke merker som er opplåst, per klasse (nøkkel = klassenavn, f.eks. "GT3").</summary>
-    public Dictionary<string, List<string>> UnlockedManufacturers { get; set; } = new();
+    /// <summary>Din aktive kontrakt (merke/privatlag/fri klasse) - null hvis du står uten kontrakt.</summary>
+    public Contract? CurrentContract { get; set; }
+    public List<Contract> ContractHistory { get; set; } = new();
 
     public List<string> UnlockedClasses { get; set; } = new() { "GT3" };
     public SeasonModel? CurrentSeason { get; set; }

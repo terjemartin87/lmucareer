@@ -192,11 +192,11 @@ public partial class MainWindow : Window
 
     private void HandlePostOutcomeEffects(WeekendProcessingOutcome outcome)
     {
+        if (outcome.ContractSalaryEarned > 0)
+            Log($"💰 Kontraktlønn: +{outcome.ContractSalaryEarned} cr");
+
         foreach (var unlocked in outcome.NewUnlocks)
             Log($"🔓 Ny klasse låst opp: {unlocked}!");
-
-        foreach (var offer in outcome.NewManufacturerOffers)
-            Log($"📩 {offer} har lagt merke til deg og tilbyr deg kontrakt!");
 
         RefreshHeader();
         RefreshSeason();
@@ -205,21 +205,33 @@ public partial class MainWindow : Window
         if (outcome.SeasonJustCompleted)
         {
             Log($"🏆 Sesong fullført! {outcome.CompletedSeason?.TotalPoints} poeng sammenlagt.");
-            ShowSeasonSummaryAndPickNext(outcome.CompletedSeason);
+
+            if (outcome.DroppedByManufacturer)
+                Log("📉 Merket var ikke fornøyd med resultatene og har sagt opp kontrakten din.");
+            else if (outcome.ContractExpired)
+                Log("📄 Kontrakten din har løpt ut. Tid for et nytt tilbud.");
+
+            ShowSeasonSummaryAndPickNext(outcome.CompletedSeason, outcome.DroppedByManufacturer, outcome.ContractExpired);
         }
     }
 
-    private void ShowSeasonSummaryAndPickNext(LmuCareerTool.Season.SeasonModel? completedSeason)
+    private void ShowSeasonSummaryAndPickNext(
+        LmuCareerTool.Season.SeasonModel? completedSeason,
+        bool droppedByManufacturer = false, bool contractExpired = false)
     {
         if (_engine == null) return;
 
-        var dialog = new SeasonSummaryWindow(completedSeason, _engine) { Owner = this };
+        var dialog = new SeasonSummaryWindow(completedSeason, _engine, droppedByManufacturer, contractExpired) { Owner = this };
 
         if (dialog.ShowDialog() == true)
         {
-            _engine.StartNewSeason(dialog.SelectedClass, dialog.SelectedManufacturer);
-            Log($"Ny sesong startet: {dialog.SelectedClass}" +
-                (dialog.SelectedManufacturer != null ? $" hos {dialog.SelectedManufacturer}" : ""));
+            var contract = _engine.Career.CurrentContract;
+            Log(contract == null
+                ? $"Ny sesong startet: {_engine.Career.CurrentClass}"
+                : $"Ny sesong startet: {_engine.Career.CurrentClass}" +
+                  (contract.IsPrivateerSeat ? " (privatlag)"
+                   : contract.IsFreeAgent ? ""
+                   : $" hos {contract.Manufacturer} ({contract.SeasonsRemaining} sesong(er) igjen, {contract.SalaryPerRound} cr/runde)"));
             RefreshHeader();
             RefreshSeason();
         }
@@ -253,7 +265,16 @@ public partial class MainWindow : Window
         var career = _engine.Career;
         DriverNameText.Text = $"Fører: {career.DriverName}";
         ClassText.Text = $"Klasse: {career.CurrentClass}   ·   Opplåst: {string.Join(", ", career.UnlockedClasses)}";
-        ManufacturerText.Text = $"Merke: {career.CurrentManufacturer ?? "-"}";
+
+        var contract = career.CurrentContract;
+        ManufacturerText.Text = contract == null
+            ? "Merke: -"
+            : contract.IsPrivateerSeat
+                ? $"Merke: Privatlag (betalt sete)"
+                : contract.IsFreeAgent
+                    ? "Merke: Fri kjøring (ingen merke-oppsett i klassen)"
+                    : $"Merke: {contract.Manufacturer}   ·   {contract.SeasonsRemaining} sesong(er) igjen   ·   " +
+                      $"{contract.SalaryPerRound} cr/runde   ·   Mål: {contract.GoalDescription}";
         LevelText.Text = career.Level.ToString();
         XpText.Text = career.TotalXp.ToString();
         SeasonPointsText.Text = (career.CurrentSeason?.TotalPoints ?? 0).ToString();

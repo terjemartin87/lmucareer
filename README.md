@@ -34,12 +34,13 @@ mesterskapstabell, rating, credits og kontrakter.
 | Bilvalidering mot sesongens bil | ✅ Riktige navn + `validate`-kommando (Fase 1) |
 | Oppsett-avvik (feil bane/bil) | ✅ Tydelig varsel + «godkjenn likevel» (Fase 1) |
 | Mesterskapstabell mot faste rivaler | ✅ Fører- og merkemesterskap, fastlåst startfelt (Fase 2) |
+| Transfer-marked / kontrakter | ✅ Interesse-baserte tilbud, lønn, sesongmål, oppsigelse (Fase 3) |
 | Sesongavslutning med oppsummering | ⚠️ Minimalt vindu (kun tabell) - full rapport kommer i Fase 4 |
 | Fører-profil / 3D | ❌ Finnes ikke - Fase 5 |
 | Installer | ❌ Finnes ikke - Fase 7 |
 | Tester | ❌ Finnes ikke - Fase 8 |
 
-Fase 0, 1 og 2 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
+Fase 0, 1, 2 og 3 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
 bevisst ble utelatt eller forenklet fra den opprinnelige planen.
 
 ---
@@ -152,8 +153,9 @@ igjen i kalenderen, eller du kjører runde 5 før runde 3, blir feil runde kredi
 ## Arkitektur og filstruktur
 
 Målbildet etter alle fasene. `[N]` viser hvilken fase filen kommer inn i; filer uten markør
-finnes allerede. **`[0]`, `[1]` og `[2]` er nå bygget** (bortsett fra `Directory.Build.props`,
-`Views/`/`ViewModels/`-flyttingen og `AiResultSynthesizer.cs` - se avvik under hver fase).
+finnes allerede. **`[0]`, `[1]`, `[2]` og `[3]` er nå bygget** (bortsett fra `Directory.Build.props`,
+`Views/`/`ViewModels/`-flyttingen, `AiResultSynthesizer.cs`, `TransferWindow.cs` og
+`Views/GarageWindow.xaml` - se avvik under hver fase).
 
 ```
 LmuCareerTool/
@@ -361,43 +363,69 @@ med en ekte 25-førers Daytona-startliste: alle 25 navnene ble korrekt låst som
   ekte spilldata ennå. Kjør et par runder til og si ifra hvis noe ser rart ut i
   mesterskapstabellen.
 
-### Fase 3 – Transfer-marked på nytt 🟡
+### Fase 3 – Transfer-marked på nytt ✅ Ferdig
 
-Dagens modell er selvmotsigende, akkurat som du sier: du får et «tilbud», men samtidig kan du
-bare kjøpe deg inn hos hvem som helst med credits, og et merke som er låst opp er låst opp for
-alltid. Forslag til en modell som henger sammen:
+Den gamle modellen var selvmotsigende: du fikk et «tilbud», men kunne samtidig kjøpe deg inn
+hos hvem som helst med credits, og et merke som var låst opp var låst opp for alltid.
+`ManufacturerUnlockService.cs` er fjernet og erstattet med en kontraktsmodell.
 
-**Kontrakt i stedet for opplåsing.** Du har til enhver tid **én kontrakt** med **ett merke**,
-med lengde i sesonger, en avtalt lønn i credits per runde, og et **sesongmål** («topp 5
-sammenlagt»). Ingenting «låses opp permanent» – du kjører for den du har kontrakt med.
+* **Kontrakt i stedet for opplåsing** (`Transfers/Contract.cs`): du har til enhver tid **én
+  kontrakt** - med ett merke, et privatlag, eller «fri kjøring» i klasser uten merke-oppsett.
+  Kontrakten har lengde i sesonger, en avtalt lønn i credits per fullført runde, og et
+  sesongmål (plassering i førermesterskapet). `CareerProfile.UnlockedManufacturers` er fjernet
+  - ingenting «låses opp» permanent lenger.
+* **Interesse i stedet for terskler** (`Transfers/InterestModel.cs`): hvert merke regner ut en
+  interesse-score (0-100) fra Driver Rating mot kravet (tyngst), snittplassering forrige sesong
+  (tung), incidents+straffer per løp forrige sesong (middels, hentet fra `RaceHistory` -
+  `CareerRaceEntry` fikk et nytt `PenaltyCount`-felt for dette), og en liten lojalitetsbonus
+  hvis du allerede kjører for merket. Er du mer enn 10 Rating-poeng under kravet, vurderer
+  merket deg ikke i det hele tatt (prestisjegap).
+* **Konkrete tilbud** (`Transfers/OfferGenerator.cs`): merker med interesse ≥ 50 sender et
+  tilbud med kontraktslengde, lønn, mål og en kort begrunnelse. Har du kontrakt med et merke og
+  innfridde forrige sesongmål, får du en **fornyelse** i stedet for et nytt tilbud (høyere
+  lønn, strengere mål). Sesongmål sjekkes mot din faktiske plassering i
+  `ChampionshipTable.ComputeDriverStandings` for forrige sesong (gjenbruker Fase 2 direkte, i
+  stedet for en løsere "snittplassering"-proxy). Et **betalt privatlag-sete** er alltid
+  tilgjengelig som fallback (engangskostnad, ingen lønn, liten rating-straff ved signering) -
+  credits kan altså fortsatt kjøpe deg en plass å kjøre, men aldri en fabrikkontrakt.
+* **Kontraktslivssyklus** (`Transfers/ContractService.cs`): lønn betales automatisk hver gang en
+  sesongrunde fullføres. Ved sesongslutt sjekkes sesongmålet - innfridde du det ikke, sier
+  merket deg opp (`WeekendProcessingOutcome.DroppedByManufacturer`); gikk kontrakten ut naturlig
+  markeres den som utløpt (`ContractExpired`). Du kan også si opp selv mot en bruddsum
+  (`CareerEngine.TryTerminateContract`, ikke koblet til UI ennå - kun tilgjengelig fra kode).
+* **Ny UI i `SeasonSummaryWindow`**: garasjens radioknapp-liste er erstattet med
+  tilbudskort (merke/privatlag/fri klasse, interesse-badge, begrunnelse, lengde, lønn, mål) med
+  en **Signer**-knapp per kort. Signering starter sesongen umiddelbart - ingen egen
+  "Start ny sesong"-knapp lenger. `SeasonSummaryWindow` viser også en varseltekst øverst hvis
+  forrige sesong endte med oppsigelse eller utløpt kontrakt.
+* Hovedvinduets header viser nå kontraktsdetaljer (merke, sesonger igjen, lønn/runde, mål) i
+  stedet for kun merkenavnet, og live-loggen viser kontraktlønn per runde.
 
-**Interesse i stedet for terskler.** Hvert merke regner ut en interesse-score (0-100) fra:
+**Verifisert:** `dotnet run --project LmuCareerTool.Console -- offers GT3` mot en fersk
+karriere (Rating 50) ga korrekt BMW/Ford (interesse 68, begge har `ratingRequired: 0`) +
+Privatlag, og ekskluderte riktig alle merker med `ratingRequired` over prestisjegap-grensen.
+Signering (`sign GT3 0`) startet sesongen korrekt. Replay av et ekte race med matchende bil
+betalte riktig kontraktlønn (+558 cr, i tillegg til +440 cr i løpsinntekt) og markerte runden
+fullført. Replay av et race på feil bane (F7-vakten) ga korrekt frikjørings-XP uten
+kontraktlønn, som forventet.
 
-| Faktor | Vekt |
-|---|---|
-| Driver Rating | tyngst |
-| Form siste sesong (plassering + poeng) | tung |
-| Renhet (incidents/straffer per løp) | middels |
-| Om merket har ledig sete (mettet stall vil ikke ha deg) | gate |
-| Lojalitet / historikk hos merket | liten bonus |
-| Prestisje-gap (Porsche vil ikke ha en rating-45-fører) | dempende |
-
-**Overgangsvindu ved sesongslutt.** Når sesongen er ferdig åpnes `TransferWindow`:
-
-1. Merker med høy nok interesse sender **konkrete tilbud** – merke, bil, kontraktslengde,
-   lønn, sesongmål, og en kort begrunnelse.
-2. Du kan **bli** hos nåværende merke (de gir et fornyelsestilbud hvis de er fornøyde).
-3. Du kan **si opp tidlig** ved å betale en bruddsum i credits – der hører credits hjemme.
-4. Har du ingen tilbud og ingen kontrakt, finnes alltid et **betalsete** hos et privatlag: du
-   *betaler* credits for setet, får ingen lønn, og en liten rating-straff. Realistisk nødutgang,
-   og mye mer interessant enn «kjøp Porsche for 7500 cr».
-5. Innfrir du ikke sesongmålet, kan merket **si deg opp**.
-
-**Klasseopprykk** styres fortsatt av XP (Rating åpner merker *innad* i klassen), men et opprykk
-til LMP2/Hypercar krever nå også et **tilbud** fra et lag i den klassen – ikke bare en terskel.
-
-Filer: `Transfers/ContractService.cs`, `InterestModel.cs`, `OfferGenerator.cs`,
-`TransferWindow.cs`, `Views/GarageWindow.xaml`. `ManufacturerUnlockService.cs` utgår.
+**Avvik fra opprinnelig plan** (bevisste forenklinger, dokumentert - ikke glemt):
+* Ingen separat `Views/GarageWindow.xaml` - garasje-/tilbudsvisningen bygger videre på
+  `SeasonSummaryWindow` (samme kombinerte "resultat + neste steg"-vindu som før), i stedet for
+  å splitte i to vinduer. Enklere flyt, ett klikk mindre.
+* `TransferWindow.cs` som egen Core-klasse ble aldri laget - det var en navnekollisjon i den
+  opprinnelige planen med selve UI-vinduet. Orkestreringen (generer tilbud → vis → signer) er
+  triviell nok til å ligge direkte i `SeasonSummaryWindow.xaml.cs` + `CareerEngine`.
+* **"Om merket har ledig sete"-gaten er ikke bygget.** LMU eksponerer ingen data om hvor mange
+  seter et merke faktisk har ledig i sin AI-startliste, så dette ville vært ren gjetning. Kun
+  Rating-basert prestisjegap brukes som gate.
+* **Oppsigelse (bruddsum) har ingen UI ennå** - `TryTerminateContract()` finnes og fungerer,
+  men er ikke koblet til en knapp. Kommer naturlig med Fase 6 (garasje som egen fane).
+  * **Fullt sesongforløp med kontraktsutløp/oppsigelse er ikke testet mot ekte spilldata** -
+  samme begrensning som Fase 2: kun én ekte resultatfil tilgjengelig. `ApplySeasonResult` og
+  `WasGoalMet` er verifisert via kodegjennomgang og gjenbruker allerede-testet
+  `ChampionshipTable`-logikk, men selve "spiller fullfører 9 runder → sesongmål sjekkes →
+  merket sier opp/fornyer" er ikke kjørt ende-til-ende med ekte data.
 
 ### Fase 4 – Sesongavslutning som føles som en avslutning 🟢
 
