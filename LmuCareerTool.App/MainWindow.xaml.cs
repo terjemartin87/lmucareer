@@ -52,6 +52,16 @@ public partial class MainWindow : Window
     {
         ResultsFolderBox.Text = resultsFolder;
         PlayerNameBox.Text = playerName;
+
+        // StartWatching() kan åpne dialogvinduer (f.eks. garasjen hvis ingen sesong er valgt)
+        // som setter Owner = this - det krever at dette vinduet allerede er vist. Konstruktøren
+        // kjører derimot FØR WelcomeWindow rekker å kalle Show() på oss, så vent til Loaded.
+        Loaded += MainWindow_AutoStart;
+    }
+
+    private void MainWindow_AutoStart(object sender, RoutedEventArgs e)
+    {
+        Loaded -= MainWindow_AutoStart;
         StartWatching();
     }
 
