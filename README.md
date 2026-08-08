@@ -35,13 +35,13 @@ mesterskapstabell, rating, credits og kontrakter.
 | Oppsett-avvik (feil bane/bil) | ✅ Tydelig varsel + «godkjenn likevel» (Fase 1) |
 | Mesterskapstabell mot faste rivaler | ✅ Fører- og merkemesterskap, fastlåst startfelt (Fase 2) |
 | Transfer-marked / kontrakter | ✅ Interesse-baserte tilbud, lønn, sesongmål, oppsigelse (Fase 3) |
-| Sesongavslutning med oppsummering | ⚠️ Minimalt vindu (kun tabell) - full rapport kommer i Fase 4 |
+| Sesongavslutning med oppsummering | ✅ Full rapport, priser, personlige rekorder, PNG/HTML-eksport (Fase 4) |
 | Fører-profil / 3D | ❌ Finnes ikke - Fase 5 |
 | Installer | ❌ Finnes ikke - Fase 7 |
 | Tester | ❌ Finnes ikke - Fase 8 |
 
-Fase 0, 1, 2 og 3 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
-bevisst ble utelatt eller forenklet fra den opprinnelige planen.
+Fase 0, 1, 2, 3 og 4 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva
+som bevisst ble utelatt eller forenklet fra den opprinnelige planen.
 
 ---
 
@@ -153,7 +153,7 @@ igjen i kalenderen, eller du kjører runde 5 før runde 3, blir feil runde kredi
 ## Arkitektur og filstruktur
 
 Målbildet etter alle fasene. `[N]` viser hvilken fase filen kommer inn i; filer uten markør
-finnes allerede. **`[0]`, `[1]`, `[2]` og `[3]` er nå bygget** (bortsett fra `Directory.Build.props`,
+finnes allerede. **`[0]`-`[4]` er nå bygget** (bortsett fra `Directory.Build.props`,
 `Views/`/`ViewModels/`-flyttingen, `AiResultSynthesizer.cs`, `TransferWindow.cs` og
 `Views/GarageWindow.xaml` - se avvik under hver fase).
 
@@ -427,21 +427,48 @@ kontraktlønn, som forventet.
   `ChampionshipTable`-logikk, men selve "spiller fullfører 9 runder → sesongmål sjekkes →
   merket sier opp/fornyer" er ikke kjørt ende-til-ende med ekte data.
 
-### Fase 4 – Sesongavslutning som føles som en avslutning 🟢
+### Fase 4 – Sesongavslutning som føles som en avslutning ✅ Ferdig
 
-`SeasonSummaryBuilder` produserer en flersides rapport i stedet for dagens ene tabell:
+`SeasonSummaryBuilder.cs` bygger en full rapport (`Models/SeasonReport.cs`) i stedet for den
+ene lille tabellen fra før, vist i et nytt `SeasonReportWindow` **før** overgangsvinduet
+(Fase 3) åpnes.
 
-* **Sammendrag:** sluttplassering i mesterskapet, poeng, seire, podier, pole positions,
-  raskeste runder, DNF-er, snittplassering, gjennomkjørte kilometer.
-* **Runde for runde:** din plassering, poeng, kumulativ posisjon i tabellen – som graf.
-* **Sluttabell:** førere og merker.
-* **Personlige rekorder:** beste runde per bane, sammenlignet med tidligere sesonger.
-* **Sesongpriser** (`AwardService`): «Årets fører», «Mest forbedret», «Renest kjørestil»,
-  «Comeback of the season» (flest posisjoner vunnet i ett løp).
-* **Kontraktsoppgjør:** innfridde du sesongmålet? Hva sier merket?
-* **Eksport til PNG/HTML**, så du kan dele resultatet med kompisen din.
-* Deretter: overgangsvinduet (Fase 3) → ny sesong genereres automatisk med **nye baner**
-  (`CalendarBuilder` unngår å gjenbruke fjorårets kalender og garanterer unike baner).
+* **Sammendrag:** sluttplassering i mesterskapet, poeng, seire, podier, pole positions
+  (`QualifyingPos == 1`), DNF-er, snittplassering, gjennomkjørt distanse (nye
+  `Laps`/`TrackLength`-felt på `CareerRaceEntry`, hentet fra resultatfilens `<RaceLaps>` og
+  `<TrackLength>`).
+* **Runde for runde:** plassering, poeng og kumulativ tabellposisjon etter hver runde -
+  sistnevnte regnes ut ved å kalle `ChampionshipTable.ComputeDriverStandings` med
+  `throughRound` satt til hver runde (gjenbruker Fase 2 direkte).
+* **Sluttabell:** fører- og merkemesterskap, samme kilde som `ChampionshipWindow`.
+* **Personlige rekorder** (`PersonalTrackRecord`): beste runde per bane denne sesongen, merket
+  med 🏆 hvis det er en ny karriererekord (sammenlignet mot HELE `RaceHistory`, ikke bare denne
+  sesongen).
+* **Sesongpriser** (`AwardService.cs`): «Mest forbedret» (snittplassering første vs. andre
+  halvdel), «Renest kjørestil» (snitt hendelser+straffer under en terskel), «Comeback of the
+  Season» (størst plasseringsgevinst i ett løp, grid mot mål). Prisene vises kun når de faktisk
+  er innfridd - ingen prisutdeling for en sesong som ikke fortjener det.
+* **Kontraktsoppgjør:** gjenbruker `DroppedByManufacturer`/`ContractExpired`-flaggene fra Fase 3
+  til å forklare hva som skjedde med kontrakten din.
+* **Eksport:** «Lagre som bilde» (WPF `RenderTargetBitmap` → PNG, helt uten eksterne
+  avhengigheter) og «Lagre som HTML» (`SeasonReportHtmlBuilder.cs` - en selvstendig,
+  delbar HTML-fil med samme mørke stil som appen).
+* **Ny sesong med bedre banefordeling** (`Season/CalendarBuilder.cs`): i stedet for det gamle
+  `trackPool[i % trackPool.Count]`-mønsteret (som alltid ga runde 1 og runde 8 samme bane med
+  dagens 7 baner/9 runder) fylles kalenderen med gjentatte, uavhengig stokkede runder av
+  banepoolen, og to like baner kan aldri havne rett etter hverandre. Ny sesong unngår også å
+  åpne på samme bane som forrige sesong sluttet på. Med kun 7 verifiserte baner og 9 runder er
+  **fullstendig** unike baner i én sesong fortsatt umulig - det krever flere verifiserte baner
+  (se Vedlegg A / `validate`-kommandoen).
+
+**Verifisert:** bygget en syntetisk 9-runders sesong (11 sjåfører, bevisst stigende form,
+ett stort comeback, lave hendelser) direkte mot `SeasonSummaryBuilder`/`AwardService` utenfor
+UI-en. Alle tre sesongpriser traff nøyaktig som forventet med riktige tall, poengsum og
+tabellposisjon stemte runde for runde, banerekorder ble riktig merket som karriererekord, HTML-
+eksporten inneholdt spillerraden og prisseksjonen, og `CalendarBuilder` unngikk både naboduplikat
+og gjenbruk av forrige sesongs siste bane i samme testkjøring. PNG-eksporten (`RenderTargetBitmap`)
+er kun kodegjennomgått - samme begrensning som resten av UI-en: ingen desktop-GUI-automatisering
+tilgjengelig for å faktisk klikke knappen og se bildet.
 
 ### Fase 5 – Fører-profil og 3D 🟢
 

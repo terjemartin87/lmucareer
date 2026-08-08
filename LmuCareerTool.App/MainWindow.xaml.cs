@@ -221,6 +221,13 @@ public partial class MainWindow : Window
     {
         if (_engine == null) return;
 
+        if (completedSeason != null)
+        {
+            var report = _engine.BuildSeasonReport(completedSeason, droppedByManufacturer, contractExpired);
+            var reportWindow = new SeasonReportWindow(report, _engine.Career.DriverName) { Owner = this };
+            reportWindow.ShowDialog();
+        }
+
         var dialog = new SeasonSummaryWindow(completedSeason, _engine, droppedByManufacturer, contractExpired) { Owner = this };
 
         if (dialog.ShowDialog() == true)

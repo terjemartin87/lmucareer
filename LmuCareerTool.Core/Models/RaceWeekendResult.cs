@@ -9,6 +9,9 @@ public class RaceWeekendResult
     public string TrackVenue { get; set; } = "";
     public DateTime CompletedAtUtc { get; set; }
 
+    /// <summary>Banelengde i meter (Fase 4: kjørt distanse i sesongrapporten). 0 hvis ukjent.</summary>
+    public double TrackLength { get; set; }
+
     public DriverResult? RaceResult { get; set; }
     public DriverResult? QualifyingResult { get; set; }
     public DriverResult? BestPracticeResult { get; set; }

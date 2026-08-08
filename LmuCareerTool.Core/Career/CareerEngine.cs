@@ -108,10 +108,11 @@ public class CareerEngine
 
         var manufacturerForCarPool = offer.IsPrivateerSeat || offer.IsFreeAgent ? null : offer.Manufacturer;
         var explicitCar = offer.IsPrivateerSeat ? offer.Car : null;
+        var avoidOpeningTrack = Career.SeasonHistory.LastOrDefault()?.Events.LastOrDefault()?.TrackVenue;
 
         Career.CurrentSeason = SeasonGenerator.Generate(
             Content, offer.CarClass, manufacturerForCarPool, seasonNumber, RacesPerSeason, EnduranceRatio,
-            explicitCar: explicitCar);
+            explicitCar: explicitCar, avoidOpeningTrack: avoidOpeningTrack);
 
         _store.Save(Career);
         return true;
@@ -132,6 +133,10 @@ public class CareerEngine
 
     public List<ManufacturerStandingEntry> GetManufacturerStandings(SeasonModel? season = null, int? throughRound = null) =>
         ChampionshipTable.ComputeManufacturerStandings(season ?? Career.CurrentSeason, Content, throughRound);
+
+    /// <summary>Bygger den fulle sesongrapporten (sammendrag, runde-for-runde, priser, kontraktsoppgjør) for en fullført sesong.</summary>
+    public SeasonReport BuildSeasonReport(SeasonModel season, bool droppedByManufacturer = false, bool contractExpired = false) =>
+        SeasonSummaryBuilder.Build(Career, season, Content, _playerName, droppedByManufacturer, contractExpired);
 
     /// <summary>Leser en fil kun for å fylle Practice/Qualifying-cache - trigger ikke XP.</summary>
     public void IndexExistingFile(string path)
@@ -290,6 +295,8 @@ public class CareerEngine
             FinishStatus = race.FinishStatus,
             IncidentCount = race.IncidentCount,
             PenaltyCount = race.PenaltyCount,
+            Laps = race.Laps,
+            TrackLength = weekend.TrackLength,
             XpEarned = xp,
             PointsEarned = points,
 

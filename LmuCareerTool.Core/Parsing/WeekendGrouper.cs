@@ -73,6 +73,7 @@ public class WeekendGrouper
         {
             TrackVenue = race.TrackVenue,
             CompletedAtUtc = race.SessionTimeUtc,
+            TrackLength = race.TrackLength,
             RaceResult = race.FindPlayer(playerName),
             FullRaceField = race.Drivers,
             TotalParticipants = race.Drivers.Count

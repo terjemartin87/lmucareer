@@ -20,6 +20,10 @@ public class CareerRaceEntry
     public int XpEarned { get; set; }
     public int PointsEarned { get; set; }
 
+    /// <summary>Fullførte runder og banelengde i meter (Fase 4: kjørt distanse i sesongrapporten).</summary>
+    public int Laps { get; set; }
+    public double TrackLength { get; set; }
+
     public double? PracticeBestLap { get; set; }
     public double? PracticeS1 { get; set; }
     public double? PracticeS2 { get; set; }

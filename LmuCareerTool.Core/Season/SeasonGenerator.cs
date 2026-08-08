@@ -18,7 +18,8 @@ public static class SeasonGenerator
         int raceCount = 9,
         double enduranceRatio = 0.35,
         int? randomSeed = null,
-        string? explicitCar = null)
+        string? explicitCar = null,
+        string? avoidOpeningTrack = null)
     {
         if (content.Tracks.Count == 0)
             throw new InvalidOperationException("Ingen baner definert i game-content.json.");
@@ -49,12 +50,7 @@ public static class SeasonGenerator
             availableCars = classDef.Cars;
         }
 
-        var trackPool = content.Tracks.OrderBy(_ => rng.Next()).ToList();
-        var selectedTracks = new List<string>();
-        for (var i = 0; i < raceCount; i++)
-        {
-            selectedTracks.Add(trackPool[i % trackPool.Count]);
-        }
+        var selectedTracks = CalendarBuilder.BuildTrackList(content.Tracks, raceCount, rng, avoidOpeningTrack);
 
         var enduranceCount = (int)Math.Round(raceCount * enduranceRatio);
         var formats = Enumerable.Repeat(RaceFormat.Endurance, enduranceCount)
