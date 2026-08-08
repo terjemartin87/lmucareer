@@ -51,8 +51,8 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   DataDir: String;
 begin
-  { Karrieredata ligger i %LOCALAPPDATA%\LmuCareerTool, utenfor {app} - spør før vi
-    eventuelt sletter den, i stedet for å rydde den bort stille ved avinstallering. }
+  // Karrieredata ligger i %LOCALAPPDATA%\LmuCareerTool, utenfor installasjonsmappen -
+  // spør før vi eventuelt sletter den, i stedet for å rydde den bort stille ved avinstallering.
   if CurUninstallStep = usPostUninstall then
   begin
     DataDir := ExpandConstant('{localappdata}\LmuCareerTool');
