@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using LmuCareerTool.App.Localization;
 using LmuCareerTool.League;
 using LmuCareerTool.Models;
 using LmuCareerTool.Settings;
@@ -82,6 +83,7 @@ public partial class LeagueMainWindow : Window
     private ResultsWatcher? _watcher;
     private string _leagueName = "";
     private string _hostName = "";
+    private bool _suppressLanguageChange = true;
 
     public LeagueMainWindow()
     {
@@ -90,6 +92,10 @@ public partial class LeagueMainWindow : Window
 
         FormatBox.ItemsSource = Enum.GetValues<LeagueFormatPreference>();
         FormatBox.SelectedIndex = 0;
+
+        LanguageBox.ItemsSource = new[] { Strings.T("Common_LanguageNorwegian"), Strings.T("Common_LanguageEnglish") };
+        LanguageBox.SelectedIndex = Strings.Current == AppLanguage.English ? 1 : 0;
+        _suppressLanguageChange = false;
     }
 
     /// <summary>Brukes av LeagueWelcomeWindow - fyller ut oppsettet og starter overvåking automatisk.</summary>
@@ -108,6 +114,18 @@ public partial class LeagueMainWindow : Window
         StartWatching();
     }
 
+    private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressLanguageChange) return;
+
+        var language = LanguageBox.SelectedIndex == 1 ? AppLanguage.English : AppLanguage.Norwegian;
+        if (language == Strings.Current) return;
+
+        LanguageStore.Save(language);
+        System.Diagnostics.Process.Start(Environment.ProcessPath!);
+        Application.Current.Shutdown();
+    }
+
     private void StartStopButton_Click(object sender, RoutedEventArgs e)
     {
         if (_watcher == null)
@@ -118,7 +136,7 @@ public partial class LeagueMainWindow : Window
 
     private void BrowseResultsFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Velg LMU Results-mappe" };
+        var dialog = new OpenFolderDialog { Title = Strings.T("Common_BrowseResultsFolderTitle") };
         if (Directory.Exists(ResultsFolderBox.Text))
             dialog.InitialDirectory = ResultsFolderBox.Text;
 
@@ -132,7 +150,7 @@ public partial class LeagueMainWindow : Window
 
         if (string.IsNullOrWhiteSpace(resultsFolder) || !Directory.Exists(resultsFolder))
         {
-            MessageBox.Show(this, $"Fant ikke mappen:\n{resultsFolder}", "Feil mappe",
+            MessageBox.Show(this, string.Format(Strings.T("Main_Msg_FolderNotFound"), resultsFolder), Strings.T("Main_Msg_FolderNotFoundTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
@@ -153,7 +171,7 @@ public partial class LeagueMainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Klarte ikke å starte: {ex.Message}", "Feil",
+            MessageBox.Show(this, string.Format(Strings.T("Main_Msg_StartFailed"), ex.Message), Strings.T("Common_ErrorTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
@@ -161,7 +179,7 @@ public partial class LeagueMainWindow : Window
         RefreshAll();
 
         var existing = Directory.GetFiles(resultsFolder, "*.xml").OrderBy(f => f).ToList();
-        Log($"Fant {existing.Count} eksisterende fil(er), indekserer...");
+        Log(string.Format(Strings.T("Main_Log_IndexingFiles"), existing.Count));
         foreach (var file in existing)
         {
             if (!_processedFiles.Add(file)) continue;
@@ -174,10 +192,10 @@ public partial class LeagueMainWindow : Window
         _watcher.Start();
 
         ResultsFolderBox.IsEnabled = false;
-        StartStopButton.Content = "Stopp overvåking";
-        StatusText.Text = $"Overvåker: {resultsFolder}";
-        Log("Venter på nye løpsresultater fra Multiplayer-økter...");
-        SetDashboardStatus("🟢", "Overvåker Results-mappen. Kjør et hostet løp (Multiplayer) i LMU - resultatet dukker opp her automatisk når det er ferdig.");
+        StartStopButton.Content = Strings.T("Main_Settings_StopWatching");
+        StatusText.Text = string.Format(Strings.T("Main_Settings_StatusWatching"), resultsFolder);
+        Log(Strings.T("League_Log_Waiting"));
+        SetDashboardStatus("🟢", Strings.T("League_DashboardStatusWatching"));
 
         NavDashboard.IsChecked = true;
     }
@@ -186,17 +204,17 @@ public partial class LeagueMainWindow : Window
     {
         _watcher?.Dispose();
         _watcher = null;
-        SetDashboardStatus("⏸", "Overvåking stoppet. Trykk Start overvåking i Innstillinger for å fortsette.");
+        SetDashboardStatus("⏸", Strings.T("Main_DashboardStatus_Stopped"));
 
         ResultsFolderBox.IsEnabled = true;
-        StartStopButton.Content = "Start overvåking";
-        StatusText.Text = "Stoppet.";
-        Log("Sluttet å overvåke.");
+        StartStopButton.Content = Strings.T("Main_Settings_StartWatching");
+        StatusText.Text = Strings.T("Main_Settings_StatusStopped");
+        Log(Strings.T("Main_Log_Stopped"));
     }
 
     private void OnSessionIgnored(SessionResult session)
     {
-        Log($"↪ {session.TrackVenue} ({session.SettingMode}) - teller ikke mot ligaen (kun 'Multiplayer' telles).");
+        Log(string.Format(Strings.T("League_Log_SessionIgnored"), session.TrackVenue, session.SettingMode));
     }
 
     private void OnNewResultFile(string path)
@@ -205,7 +223,7 @@ public partial class LeagueMainWindow : Window
 
         Dispatcher.Invoke(() =>
         {
-            Log($"Ny fil: {Path.GetFileName(path)}");
+            Log(string.Format(Strings.T("Main_Log_NewFile"), Path.GetFileName(path)));
 
             try
             {
@@ -214,7 +232,7 @@ public partial class LeagueMainWindow : Window
             }
             catch (Exception ex)
             {
-                Log($"[FEIL] Klarte ikke å lese filen: {ex.Message}");
+                Log(string.Format(Strings.T("Main_Log_FileReadError"), ex.Message));
             }
         });
     }
@@ -227,17 +245,16 @@ public partial class LeagueMainWindow : Window
 
         if (outcome.MatchedRound == null && outcome.CandidateRound != null)
         {
-            Log($"⚠ {weekend.TrackVenue} matchet ikke neste runde ({outcome.CandidateRound.TrackVenue}).");
+            Log(string.Format(Strings.T("League_Log_TrackMismatch"), weekend.TrackVenue, outcome.CandidateRound.TrackVenue));
 
             var result = MessageBox.Show(this,
-                $"Løpet ble kjørt på {weekend.TrackVenue}, men neste runde i kalenderen er {outcome.CandidateRound.TrackVenue}.\n\n" +
-                "Godkjenne runden likevel med dette resultatet?",
-                "Bane stemte ikke", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                string.Format(Strings.T("League_Msg_TrackMismatchBody"), weekend.TrackVenue, outcome.CandidateRound.TrackVenue),
+                Strings.T("League_Msg_TrackMismatchTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
             {
                 var approved = _engine!.ApproveDespiteMismatch(outcome);
-                Log($"✅ Godkjent manuelt: runde {approved.MatchedRound?.RoundNumber} - {weekend.TrackVenue}, {weekend.TotalParticipants} deltakere.");
+                Log(string.Format(Strings.T("League_Log_ApprovedManually"), approved.MatchedRound?.RoundNumber, weekend.TrackVenue, weekend.TotalParticipants));
                 RefreshAll();
                 if (approved.SeasonJustCompleted) AnnounceSeasonComplete();
             }
@@ -246,11 +263,11 @@ public partial class LeagueMainWindow : Window
 
         if (outcome.MatchedRound == null)
         {
-            Log($"↪ {weekend.TrackVenue}: fullført løp registrert, men ingen aktiv sesong å knytte det til.");
+            Log(string.Format(Strings.T("League_Log_NoActiveSeason"), weekend.TrackVenue));
             return;
         }
 
-        Log($"🏁 Runde {outcome.MatchedRound.RoundNumber} fullført: {weekend.TrackVenue} - {weekend.TotalParticipants} deltakere.");
+        Log(string.Format(Strings.T("League_Log_RoundCompleted"), outcome.MatchedRound.RoundNumber, weekend.TrackVenue, weekend.TotalParticipants));
         RefreshAll();
 
         if (outcome.SeasonJustCompleted) AnnounceSeasonComplete();
@@ -258,22 +275,22 @@ public partial class LeagueMainWindow : Window
 
     private void AnnounceSeasonComplete()
     {
-        Log("🏆 Sesongen er fullført! Generer en ny sesong fra Innstillinger når dere er klare.");
+        Log(Strings.T("League_Log_SeasonComplete"));
     }
 
     private void GenerateSeasonButton_Click(object sender, RoutedEventArgs e)
     {
         if (_engine == null)
         {
-            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv liga", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Strings.T("League_Msg_NoActiveLeague"), Strings.T("League_Msg_NoActiveLeagueTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (_engine.League.CurrentSeason is { IsComplete: false })
         {
             var confirm = MessageBox.Show(this,
-                "Det finnes allerede en pågående sesong som ikke er fullført. Generere en ny sesong vil erstatte den (den fullførte historikken beholdes ikke).\n\nFortsette?",
-                "Pågående sesong", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                Strings.T("League_Msg_OngoingSeasonBody"),
+                Strings.T("League_Msg_OngoingSeasonTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
         }
 
@@ -282,13 +299,13 @@ public partial class LeagueMainWindow : Window
 
         if (selectedClasses.Count == 0)
         {
-            MessageBox.Show(this, "Velg minst én klasse først.", "Mangler klasse", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Strings.T("League_Msg_MissingClass"), Strings.T("League_Msg_MissingClassTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!int.TryParse(RoundCountBox.Text, out var roundCount) || roundCount < 1)
         {
-            MessageBox.Show(this, "Antall løp må være et positivt tall.", "Ugyldig antall", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Strings.T("League_Msg_InvalidRoundCount"), Strings.T("League_Msg_InvalidRoundCountTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -296,8 +313,8 @@ public partial class LeagueMainWindow : Window
         var carClass = string.Join(" + ", selectedClasses);
 
         _engine.GenerateNewSeason(carClass, roundCount, format);
-        Log($"📅 Ny sesong generert: {carClass}, {roundCount} runder, {format}." +
-            (selectedClasses.Count > 1 ? " Multiklasse-løp - hver klasse scores og vises separat." : ""));
+        Log(string.Format(Strings.T("League_Log_SeasonGenerated"), carClass, roundCount, format) +
+            (selectedClasses.Count > 1 ? Strings.T("League_Log_MulticlassNote") : ""));
         RefreshAll();
         NavCalendar.IsChecked = true;
     }
@@ -306,15 +323,15 @@ public partial class LeagueMainWindow : Window
     {
         if (_engine == null)
         {
-            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv liga", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Strings.T("League_Msg_NoActiveLeague"), Strings.T("League_Msg_NoActiveLeagueTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var dialog = new SaveFileDialog
         {
-            Title = "Publiser ligastilling",
-            Filter = "HTML-fil (*.html)|*.html",
-            FileName = $"{_leagueName}-stilling.html",
+            Title = Strings.T("League_PublishDialogTitle"),
+            Filter = Strings.T("Common_HtmlFileFilter"),
+            FileName = $"{_leagueName}-standings.html",
         };
 
         if (dialog.ShowDialog(this) != true) return;
@@ -322,13 +339,13 @@ public partial class LeagueMainWindow : Window
         try
         {
             _engine.PublishSnapshot(dialog.FileName);
-            Log($"📤 Publisert: {dialog.FileName}");
-            MessageBox.Show(this, "Ligastillingen er publisert. Del filen med hvem du vil - den er statisk og read-only.",
-                "Publisert", MessageBoxButton.OK, MessageBoxImage.Information);
+            Log(string.Format(Strings.T("League_Log_Published"), dialog.FileName));
+            MessageBox.Show(this, Strings.T("League_Msg_PublishSuccess"),
+                Strings.T("League_Msg_PublishedTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Klarte ikke å publisere: {ex.Message}", "Feil", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, string.Format(Strings.T("League_Msg_PublishFailed"), ex.Message), Strings.T("Common_ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -338,14 +355,14 @@ public partial class LeagueMainWindow : Window
 
         if (PenaltyRoundBox.SelectedItem is not int round)
         {
-            MessageBox.Show(this, "Velg en runde.", "Mangler runde", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Strings.T("League_Msg_MissingRound"), Strings.T("League_Msg_MissingRoundTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var driver = (PenaltyDriverBox.Text ?? "").Trim();
         if (string.IsNullOrWhiteSpace(driver))
         {
-            MessageBox.Show(this, "Velg eller skriv inn en fører.", "Mangler fører", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Strings.T("League_Msg_MissingDriver"), Strings.T("League_Msg_MissingDriverTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -355,8 +372,10 @@ public partial class LeagueMainWindow : Window
         var reason = (PenaltyReasonBox.Text ?? "").Trim();
 
         _engine.ApplyPenalty(round, driver, pointsDeducted, PenaltyDsqBox.IsChecked == true, reason);
-        Log($"🚩 Straff gitt: {driver} (runde {round}) - " +
-            (PenaltyDsqBox.IsChecked == true ? "diskvalifisert" : $"-{pointsDeducted} poeng"));
+        var consequence = PenaltyDsqBox.IsChecked == true
+            ? Strings.T("League_Log_PenaltyDisqualified")
+            : string.Format(Strings.T("League_Log_PenaltyPointsDeducted"), pointsDeducted);
+        Log(string.Format(Strings.T("League_Log_PenaltyGiven"), driver, round, consequence));
 
         PenaltyReasonBox.Text = "";
         PenaltyPointsBox.Text = "0";
@@ -371,10 +390,9 @@ public partial class LeagueMainWindow : Window
 
         var history = LeagueStandingsCalculator.BuildDriverHistory(_engine.League, row.Name);
         MessageBox.Show(this,
-            $"Løp: {history.TotalRaces}\nPoeng totalt: {history.TotalPoints}\nSeire: {history.Wins}\n" +
-            $"Podier: {history.Podiums}\nTop 5: {history.Top5}\nTop 10: {history.Top10}\n" +
-            $"Beste plassering: {(history.BestFinish > 0 ? $"P{history.BestFinish}" : "-")}",
-            $"Historikk - {history.Name}", MessageBoxButton.OK, MessageBoxImage.Information);
+            string.Format(Strings.T("League_DriverHistory_Body"), history.TotalRaces, history.TotalPoints, history.Wins,
+                history.Podiums, history.Top5, history.Top10, history.BestFinish > 0 ? $"P{history.BestFinish}" : "-"),
+            string.Format(Strings.T("League_DriverHistory_Title"), history.Name), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Nav_Checked(object sender, RoutedEventArgs e)
@@ -405,18 +423,18 @@ public partial class LeagueMainWindow : Window
         if (_engine == null) return;
 
         LeagueNameNavText.Text = _engine.League.LeagueName.ToUpperInvariant();
-        HeaderLeagueNameText.Text = $"Liga: {_engine.League.LeagueName}";
+        HeaderLeagueNameText.Text = string.Format(Strings.T("League_HeaderLeagueName"), _engine.League.LeagueName);
 
         var season = _engine.League.CurrentSeason;
         if (season == null)
         {
-            HeaderSeasonText.Text = "Ingen aktiv sesong - generer en fra Innstillinger.";
+            HeaderSeasonText.Text = Strings.T("League_HeaderNoSeasonGenerate");
             RoundsText.Text = "0 / 0";
             LeaderText.Text = "-";
             return;
         }
 
-        HeaderSeasonText.Text = $"Sesong {season.SeasonNumber} - {season.CarClass}";
+        HeaderSeasonText.Text = string.Format(Strings.T("League_HeaderSeason"), season.SeasonNumber, season.CarClass);
         RoundsText.Text = $"{season.CompletedCount} / {season.Rounds.Count}";
 
         var leader = LeagueStandingsCalculator.ComputeDriverStandings(season).FirstOrDefault();
@@ -504,7 +522,7 @@ public partial class LeagueMainWindow : Window
             Round = r.RoundNumber,
             Track = r.TrackVenue,
             Format = r.Format.ToString(),
-            Status = r.Completed ? "Fullført" : "Ikke kjørt",
+            Status = r.Completed ? Strings.T("League_Status_Completed") : Strings.T("League_Status_NotRun"),
             Winner = r.FieldResults.FirstOrDefault(f => f.Position == 1)?.Name ?? "-",
         }).ToList();
 
@@ -526,7 +544,7 @@ public partial class LeagueMainWindow : Window
             {
                 Round = r.RoundNumber,
                 Driver = p.DriverName,
-                Consequence = p.Disqualified ? "Diskvalifisert" : $"-{p.PointsDeducted} poeng",
+                Consequence = p.Disqualified ? Strings.T("League_Consequence_Disqualified") : string.Format(Strings.T("League_Consequence_PointsDeducted"), p.PointsDeducted),
                 Reason = p.Reason,
             }))
             .OrderByDescending(p => p.Round)

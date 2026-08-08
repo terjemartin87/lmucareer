@@ -17,9 +17,10 @@ mesterskapstabell, rating, credits og kontrakter.
 3. [Arkitektur og filstruktur](#arkitektur-og-filstruktur)
 4. [Fase-plan](#fase-plan)
 5. [Liga modus](#liga-modus)
-6. [Designnotater](#designnotater)
-7. [Bygge og kjøre](#bygge-og-kjøre)
-8. [Vedlegg A: verifiserte navn fra spillet](#vedlegg-a-verifiserte-navn-fra-spillet)
+6. [Språk (norsk/engelsk)](#språk-norskengelsk)
+7. [Designnotater](#designnotater)
+8. [Bygge og kjøre](#bygge-og-kjøre)
+9. [Vedlegg A: verifiserte navn fra spillet](#vedlegg-a-verifiserte-navn-fra-spillet)
 
 ---
 
@@ -779,6 +780,53 @@ delingsmekanisme (statisk publisert øyeblikksbilde, ikke live/hostet) og result
 enkeltstraffer fra UI-en ennå - kun å gi nye. Ingen "generer ny sesong mens forrige ikke er
 fullført"-sperre utover en bekreftelsesdialog (data fra en ufullført sesong som overskrives, går
 tapt - fullførte sesonger i `SeasonHistory` er ikke berørt).
+
+---
+
+## Språk (norsk/engelsk)
+
+✅ Delvis ferdig - se Tier 1/Tier 2 under. Bygget etter eksplisitt ønske om en engelsk
+demo-video, som avdekket at appen ikke hadde noe oversettelsessystem i det hele tatt (all UI-tekst
+var hardkodet norsk).
+
+### Arkitektur
+
+* `LmuCareerTool.App/Localization/Strings.cs`: ett stort oppslagsverk (`Dictionary<string,
+  (string Nb, string En)>`) - hver nøkkel har begge oversettelser rett ved siden av hverandre,
+  slik at de ikke kan drifte fra hverandre uten at det er synlig i samme diff.
+* `LmuCareerTool.App/Localization/LocExtension.cs`: en XAML-utvidelse (`{loc:Loc NøkkelNavn}`)
+  som slår opp riktig tekst når vinduet konstrueres - **ikke** en løsning for sanntids-bytte
+  midt i en økt. Kode-bak bruker `Strings.T("Nøkkel")` (evt. `string.Format` for tekster med
+  `{0}`/`{1}`-plassholdere som rundenummer, filnavn, XP-summer osv).
+* `LmuCareerTool.App/Localization/LanguageStore.cs`: leser/skriver ÉN global
+  `%LOCALAPPDATA%\LmuCareerTool\language.json` - helt separat fra karriere-/liga-spesifikke
+  `settings.json`/`league_settings.json`, som allerede overbelaster `PlayerName` til to
+  forskjellige ting og ikke trengte et tredje formål oppi det.
+* **Språkbytte krever restart** - en NO/EN-veksler i toppen av `ModeSelectWindow` (mest synlig,
+  det er alltid første skjermbilde), pluss en tilsvarende nedtrekksliste i
+  Innstillinger-fanen i både `MainWindow` og `LeagueMainWindow`. Å bytte skriver
+  `language.json` og kjører `Process.Start(Environment.ProcessPath!)` + `Shutdown()` - et
+  bevisst valg fremfor å bygge et fullt sanntids-rebinding-system (`INotifyPropertyChanged`
+  på hver eneste tekst) for noe som uansett skjer sjelden.
+
+### Tier 1 (fullt oversatt) vs. Tier 2 (fortsatt kun norsk)
+
+**Tier 1** - alt en bruker faktisk lever i til daglig: `ModeSelectWindow`, `WelcomeWindow`,
+`LeagueWelcomeWindow`, hele `MainWindow` (Dashboard, Sesong, Mesterskap, Historikk, Hjelp,
+Innstillinger, toasts, logglinjer, MessageBox-er), og hele `LeagueMainWindow` (Dashboard,
+Stilling, Kalender, Straffer, Innstillinger, logglinjer, MessageBox-er).
+
+**Tier 2** - bevisst IKKE oversatt ennå (dokumentert her, ikke bare glemt):
+`SeasonSummaryWindow` (garasje/kontraktstilbud), `SeasonReportWindow` (sesongrapport),
+`DriverProfileWindow`, `RaceDetailWindow`, `ManufacturerInterestWindow`, `MiniWidgetWindow`,
+og de to HTML-rapportbyggerne (`SeasonReportHtmlBuilder`, `LeagueReportHtmlBuilder`). Disse
+forblir norsk uansett språkvalg til noen tar fatt på dem - samme mekanisme
+(`Strings`/`LocExtension`) kan gjenbrukes direkte, det er ren oversettelsesjobb igjen, ingen ny
+arkitektur. Installerens egen `[CustomMessages]`-oversettelse (fra tidligere) er upåvirket.
+
+**Verifisert:** full solution bygget med 0 advarsler/feil. Appen startet og skjermbilde tatt med
+`language.json` satt til både `en` og `nb` - begge viste korrekt oversatt tekst uten noen
+`[NøkkelNavn]`-plassholdere (som ville avslørt en manglende oppføring i `Strings.cs`).
 
 ---
 

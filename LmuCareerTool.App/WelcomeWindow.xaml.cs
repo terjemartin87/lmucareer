@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using LmuCareerTool.App.Localization;
 using LmuCareerTool.Settings;
 using Microsoft.Win32;
 
@@ -38,20 +39,20 @@ public partial class WelcomeWindow : Window
         var name = PlayerNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            PrimaryButton.Content = "Start";
+            PrimaryButton.Content = Strings.T("Welcome_ButtonStart");
             WelcomeBackText.Visibility = Visibility.Collapsed;
             return;
         }
 
         if (File.Exists(AppPaths.CareerFilePath(name)))
         {
-            PrimaryButton.Content = "Fortsett karriere";
-            WelcomeBackText.Text = $"👋 Velkommen tilbake, {name}!";
+            PrimaryButton.Content = Strings.T("Welcome_ButtonContinueCareer");
+            WelcomeBackText.Text = string.Format(Strings.T("Welcome_WelcomeBack"), name);
             WelcomeBackText.Visibility = Visibility.Visible;
         }
         else
         {
-            PrimaryButton.Content = "Start karriere";
+            PrimaryButton.Content = Strings.T("Welcome_ButtonStartCareer");
             WelcomeBackText.Visibility = Visibility.Collapsed;
         }
     }
@@ -60,7 +61,7 @@ public partial class WelcomeWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Velg LMU Results-mappe",
+            Title = Strings.T("Common_BrowseResultsFolderTitle"),
         };
         if (Directory.Exists(ResultsFolderBox.Text))
             dialog.InitialDirectory = ResultsFolderBox.Text;
@@ -76,13 +77,13 @@ public partial class WelcomeWindow : Window
 
         if (string.IsNullOrWhiteSpace(playerName))
         {
-            ShowError("Skriv inn LMU-visningsnavnet ditt først.");
+            ShowError(Strings.T("Welcome_ErrorNoName"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(resultsFolder) || !Directory.Exists(resultsFolder))
         {
-            ShowError("Fant ikke Results-mappen. Velg riktig mappe med \"Bla gjennom...\".");
+            ShowError(Strings.T("Welcome_ErrorNoFolder"));
             return;
         }
 

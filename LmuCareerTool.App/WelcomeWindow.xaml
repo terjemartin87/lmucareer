@@ -1,7 +1,8 @@
 <Window x:Class="LmuCareerTool.App.WelcomeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="LMU Karriere" Width="520" SizeToContent="Height"
+        xmlns:loc="clr-namespace:LmuCareerTool.App.Localization"
+        Title="{loc:Loc Welcome_WindowTitle}" Width="520" SizeToContent="Height"
         Background="{StaticResource BgColor}"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
@@ -18,8 +19,8 @@
                     <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.4" Color="Black" />
                 </Image.Effect>
             </Image>
-            <TextBlock Text="LMU KARRIERE" FontSize="28" FontFamily="Segoe UI Semibold" HorizontalAlignment="Center" />
-            <TextBlock Text="Fra pit lane til podium - din egen Le Mans-karriere." FontStyle="Italic"
+            <TextBlock Text="{loc:Loc ModeSelect_Wordmark}" FontSize="28" FontFamily="Segoe UI Semibold" HorizontalAlignment="Center" />
+            <TextBlock Text="{loc:Loc ModeSelect_Quote}" FontStyle="Italic"
                        Foreground="{StaticResource MutedTextColor}" HorizontalAlignment="Center" Margin="0,4,0,8" />
 
             <TextBlock x:Name="WelcomeBackText" Text="" FontSize="13" Foreground="{StaticResource GoodColor}"
@@ -27,31 +28,31 @@
 
             <Border Style="{StaticResource CardStyle}" Margin="0,28,0,14">
                 <StackPanel>
-                    <TextBlock Text="DITT LMU-VISNINGSNAVN" Style="{StaticResource SectionHeaderStyle}" />
+                    <TextBlock Text="{loc:Loc Welcome_PlayerNameLabel}" Style="{StaticResource SectionHeaderStyle}" />
                     <TextBox x:Name="PlayerNameBox" FontSize="14" TextChanged="PlayerNameBox_TextChanged" />
-                    <TextBlock Text="Nøyaktig slik det vises i spillet - sjekk et resultat i UserData\Log\Results hvis du er usikker."
+                    <TextBlock Text="{loc:Loc Welcome_PlayerNameHelp}"
                                Foreground="{StaticResource MutedTextColor}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
             </Border>
 
             <Border Style="{StaticResource CardStyle}" Margin="0,0,0,26">
                 <StackPanel>
-                    <TextBlock Text="LMU RESULTS-MAPPE" Style="{StaticResource SectionHeaderStyle}" />
+                    <TextBlock Text="{loc:Loc Welcome_ResultsFolderLabel}" Style="{StaticResource SectionHeaderStyle}" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
-                        <Button Grid.Column="1" Content="Bla gjennom..." Style="{StaticResource SecondaryButtonStyle}"
+                        <Button Grid.Column="1" Content="{loc:Loc Common_Browse}" Style="{StaticResource SecondaryButtonStyle}"
                                 Padding="12,8" Click="BrowseButton_Click" />
                     </Grid>
-                    <TextBlock Text="Fylt ut automatisk hvis Steam finner spillet - endre bare hvis du har flyttet det."
+                    <TextBlock Text="{loc:Loc Welcome_ResultsFolderHelp}"
                                Foreground="{StaticResource MutedTextColor}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
             </Border>
 
-            <Button x:Name="PrimaryButton" Content="Start" FontSize="15" Padding="0,15" Click="PrimaryButton_Click" />
+            <Button x:Name="PrimaryButton" Content="{loc:Loc Welcome_ButtonStart}" FontSize="15" Padding="0,15" Click="PrimaryButton_Click" />
             <TextBlock x:Name="ErrorText" Text="" Foreground="{StaticResource DangerColor}" Margin="0,12,0,0"
                        TextWrapping="Wrap" HorizontalAlignment="Center" Visibility="Collapsed" />
         </StackPanel>

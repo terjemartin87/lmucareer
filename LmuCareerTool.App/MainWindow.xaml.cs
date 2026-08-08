@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using LmuCareerTool.App.Localization;
 using LmuCareerTool.Settings;
 using LmuCareerTool.Career;
 using LmuCareerTool.Models;
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
     private CareerEngine? _engine;
     private ResultsWatcher? _watcher;
     private MiniWidgetWindow? _miniWidget;
+    private bool _suppressLanguageChange = true;
 
     private readonly ObservableCollection<SeasonEventRow> _seasonRows = new();
     private readonly ObservableCollection<RaceHistoryRow> _historyRows = new();
@@ -41,6 +43,10 @@ public partial class MainWindow : Window
                ?? @"C:\Program Files (x86)\Steam\steamapps\common\Le Mans Ultimate\UserData\Log\Results")
             : settings.ResultsFolder;
         PlayerNameBox.Text = settings.PlayerName;
+
+        LanguageBox.ItemsSource = new[] { Strings.T("Common_LanguageNorwegian"), Strings.T("Common_LanguageEnglish") };
+        LanguageBox.SelectedIndex = Strings.Current == AppLanguage.English ? 1 : 0;
+        _suppressLanguageChange = false;
 
         if (string.IsNullOrWhiteSpace(settings.PlayerName))
             NavSettings.IsChecked = true; // ingen tidligere oppsett - start på Innstillinger i stedet for et tomt Dashboard
@@ -65,6 +71,18 @@ public partial class MainWindow : Window
         StartWatching();
     }
 
+    private void LanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressLanguageChange) return;
+
+        var language = LanguageBox.SelectedIndex == 1 ? AppLanguage.English : AppLanguage.Norwegian;
+        if (language == Strings.Current) return;
+
+        LanguageStore.Save(language);
+        System.Diagnostics.Process.Start(Environment.ProcessPath!);
+        Application.Current.Shutdown();
+    }
+
     private void StartStopButton_Click(object sender, RoutedEventArgs e)
     {
         if (_watcher == null)
@@ -75,7 +93,7 @@ public partial class MainWindow : Window
 
     private void BrowseResultsFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Velg LMU Results-mappe" };
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = Strings.T("Common_BrowseResultsFolderTitle") };
         if (Directory.Exists(ResultsFolderBox.Text))
             dialog.InitialDirectory = ResultsFolderBox.Text;
 
@@ -90,14 +108,14 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrWhiteSpace(resultsFolder) || string.IsNullOrWhiteSpace(playerName))
         {
-            MessageBox.Show(this, "Fyll ut både Results-mappe og visningsnavn først.", "Mangler info",
+            MessageBox.Show(this, Strings.T("Main_Msg_MissingSetup"), Strings.T("Main_Msg_MissingSetupTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!Directory.Exists(resultsFolder))
         {
-            MessageBox.Show(this, $"Fant ikke mappen:\n{resultsFolder}", "Feil mappe",
+            MessageBox.Show(this, string.Format(Strings.T("Main_Msg_FolderNotFound"), resultsFolder), Strings.T("Main_Msg_FolderNotFoundTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
@@ -112,7 +130,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Klarte ikke å starte: {ex.Message}", "Feil",
+            MessageBox.Show(this, string.Format(Strings.T("Main_Msg_StartFailed"), ex.Message), Strings.T("Common_ErrorTitle"),
                 MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
@@ -131,7 +149,7 @@ public partial class MainWindow : Window
 
         // Indekser eksisterende filer først (fyller Practice/Qualifying-cache)
         var existing = Directory.GetFiles(resultsFolder, "*.xml").OrderBy(f => f).ToList();
-        Log($"Fant {existing.Count} eksisterende fil(er), indekserer...");
+        Log(string.Format(Strings.T("Main_Log_IndexingFiles"), existing.Count));
         foreach (var file in existing)
         {
             if (!_processedFiles.Add(file)) continue;
@@ -145,11 +163,11 @@ public partial class MainWindow : Window
 
         ResultsFolderBox.IsEnabled = false;
         PlayerNameBox.IsEnabled = false;
-        StartStopButton.Content = "Stopp overvåking";
-        StatusText.Text = $"Overvåker: {resultsFolder}";
-        Log("Venter på nye løpsresultater...");
-        ShowToast("🏁", "Overvåking startet - klar for løp!", "AccentColor");
-        SetDashboardStatus("🟢", "Overvåker Results-mappen. Kjør et løp i LMU (Race Weekend) - resultatet dukker opp her automatisk når det er ferdig.");
+        StartStopButton.Content = Strings.T("Main_Settings_StopWatching");
+        StatusText.Text = string.Format(Strings.T("Main_Settings_StatusWatching"), resultsFolder);
+        Log(Strings.T("Main_Log_Waiting"));
+        ShowToast("🏁", Strings.T("Main_Toast_WatchingStarted"), "AccentColor");
+        SetDashboardStatus("🟢", Strings.T("Main_DashboardStatus_Watching"));
 
         NavDashboard.IsChecked = true;
     }
@@ -158,18 +176,18 @@ public partial class MainWindow : Window
     {
         _watcher?.Dispose();
         _watcher = null;
-        SetDashboardStatus("⏸", "Overvåking stoppet. Trykk Start overvåking i Innstillinger for å fortsette.");
+        SetDashboardStatus("⏸", Strings.T("Main_DashboardStatus_Stopped"));
 
         ResultsFolderBox.IsEnabled = true;
         PlayerNameBox.IsEnabled = true;
-        StartStopButton.Content = "Start overvåking";
-        StatusText.Text = "Stoppet.";
-        Log("Sluttet å overvåke.");
+        StartStopButton.Content = Strings.T("Main_Settings_StartWatching");
+        StatusText.Text = Strings.T("Main_Settings_StatusStopped");
+        Log(Strings.T("Main_Log_Stopped"));
     }
 
     private void OnSessionIgnored(SessionResult session)
     {
-        Log($"↪ {session.TrackVenue} ({session.SettingMode}) - teller ikke mot karrieren (kun 'Race Weekend' telles).");
+        Log(string.Format(Strings.T("Main_Log_SessionIgnored"), session.TrackVenue, session.SettingMode));
     }
 
     private void OnNewResultFile(string path)
@@ -178,7 +196,7 @@ public partial class MainWindow : Window
 
         Dispatcher.Invoke(() =>
         {
-            Log($"Ny fil: {Path.GetFileName(path)}");
+            Log(string.Format(Strings.T("Main_Log_NewFile"), Path.GetFileName(path)));
 
             try
             {
@@ -187,7 +205,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Log($"[FEIL] Klarte ikke å lese filen: {ex.Message}");
+                Log(string.Format(Strings.T("Main_Log_FileReadError"), ex.Message));
             }
         });
     }
@@ -197,7 +215,7 @@ public partial class MainWindow : Window
         var weekend = outcome.Weekend;
         if (weekend.RaceResult == null)
         {
-            Log($"⚠ Fant ikke deg i resultatet for {weekend.TrackVenue}. Sjekk visningsnavnet.");
+            Log(string.Format(Strings.T("Main_Log_PlayerNotFound"), weekend.TrackVenue));
             return;
         }
 
@@ -208,19 +226,19 @@ public partial class MainWindow : Window
             foreach (var issue in outcome.Issues)
                 Log($"⚠ {issue}");
 
-            ShowToast("⚠", "Oppsettet stemte ikke - se loggen for detaljer.", "WarnColor");
+            ShowToast("⚠", Strings.T("Main_Toast_SetupMismatch"), "WarnColor");
 
             if (outcome.CanApproveAnyway)
             {
                 var result = MessageBox.Show(this,
-                    $"{string.Join("\n\n", outcome.Issues)}\n\nGodkjenne runden likevel med dette resultatet (P{race.Position})?",
-                    "Oppsett stemte ikke", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    string.Format(Strings.T("Main_Msg_SetupMismatchBody"), string.Join("\n\n", outcome.Issues), race.Position),
+                    Strings.T("Main_Msg_SetupMismatchTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
                     var approved = _engine!.ApproveDespiteMismatch(outcome);
-                    Log($"✅ Godkjent manuelt: {weekend.TrackVenue} - +{approved.XpEarned} XP, +{approved.PointsEarned} poeng, " +
-                        $"Rating {approved.RatingDelta:+0;-0;0}, +{approved.CreditsEarned} cr");
+                    Log(string.Format(Strings.T("Main_Log_ApprovedManually"), weekend.TrackVenue, approved.XpEarned, approved.PointsEarned,
+                        FormatDelta(approved.RatingDelta), approved.CreditsEarned));
                     HandlePostOutcomeEffects(approved);
                     return;
                 }
@@ -228,23 +246,25 @@ public partial class MainWindow : Window
         }
         else
         {
-            Log($"🏁 {weekend.TrackVenue}: P{race.Position} av {weekend.TotalParticipants} - " +
-                $"+{outcome.XpEarned} XP, +{outcome.PointsEarned} poeng, Rating {outcome.RatingDelta:+0;-0;0}, +{outcome.CreditsEarned} cr");
-            ShowToast("🏁", $"{weekend.TrackVenue}: P{race.Position} - +{outcome.XpEarned} XP", "AccentColor");
+            Log(string.Format(Strings.T("Main_Log_RaceResult"), weekend.TrackVenue, race.Position, weekend.TotalParticipants,
+                outcome.XpEarned, outcome.PointsEarned, FormatDelta(outcome.RatingDelta), outcome.CreditsEarned));
+            ShowToast("🏁", string.Format(Strings.T("Main_Toast_RaceResult"), weekend.TrackVenue, race.Position, outcome.XpEarned), "AccentColor");
         }
 
         HandlePostOutcomeEffects(outcome);
     }
 
+    private static string FormatDelta(int delta) => delta > 0 ? $"+{delta}" : delta < 0 ? delta.ToString() : "0";
+
     private void HandlePostOutcomeEffects(WeekendProcessingOutcome outcome)
     {
         if (outcome.ContractSalaryEarned > 0)
-            Log($"💰 Kontraktlønn: +{outcome.ContractSalaryEarned} cr");
+            Log(string.Format(Strings.T("Main_Log_ContractSalary"), outcome.ContractSalaryEarned));
 
         foreach (var unlocked in outcome.NewUnlocks)
         {
-            Log($"🔓 Ny klasse låst opp: {unlocked}!");
-            ShowToast("🔓", $"Ny klasse låst opp: {unlocked}!", "AccentGold");
+            Log(string.Format(Strings.T("Main_Log_ClassUnlocked"), unlocked));
+            ShowToast("🔓", string.Format(Strings.T("Main_Toast_ClassUnlocked"), unlocked), "AccentGold");
         }
 
         RefreshHeader();
@@ -254,13 +274,13 @@ public partial class MainWindow : Window
 
         if (outcome.SeasonJustCompleted)
         {
-            Log($"🏆 Sesong fullført! {outcome.CompletedSeason?.TotalPoints} poeng sammenlagt.");
-            ShowToast("🏆", "Sesong fullført!", "AccentGold");
+            Log(string.Format(Strings.T("Main_Log_SeasonComplete"), outcome.CompletedSeason?.TotalPoints));
+            ShowToast("🏆", Strings.T("Main_Toast_SeasonComplete"), "AccentGold");
 
             if (outcome.DroppedByManufacturer)
-                Log("📉 Merket var ikke fornøyd med resultatene og har sagt opp kontrakten din.");
+                Log(Strings.T("Main_Log_DroppedByManufacturer"));
             else if (outcome.ContractExpired)
-                Log("📄 Kontrakten din har løpt ut. Tid for et nytt tilbud.");
+                Log(Strings.T("Main_Log_ContractExpired"));
 
             ShowSeasonSummaryAndPickNext(outcome.CompletedSeason, outcome.DroppedByManufacturer, outcome.ContractExpired);
         }
@@ -284,12 +304,11 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true)
         {
             var contract = _engine.Career.CurrentContract;
-            Log(contract == null
-                ? $"Ny sesong startet: {_engine.Career.CurrentClass}"
-                : $"Ny sesong startet: {_engine.Career.CurrentClass}" +
-                  (contract.IsPrivateerSeat ? " (privatlag)"
-                   : contract.IsFreeAgent ? ""
-                   : $" hos {contract.Manufacturer} ({contract.SeasonsRemaining} sesong(er) igjen, {contract.SalaryPerRound} cr/runde)"));
+            var suffix = contract == null ? ""
+                : contract.IsPrivateerSeat ? Strings.T("Main_Log_NewSeasonPrivateer")
+                : contract.IsFreeAgent ? ""
+                : string.Format(Strings.T("Main_Log_NewSeasonManufacturer"), contract.Manufacturer, contract.SeasonsRemaining, contract.SalaryPerRound);
+            Log(string.Format(Strings.T("Main_Log_NewSeasonStarted"), _engine.Career.CurrentClass) + suffix);
             RefreshHeader();
             RefreshSeason();
             RefreshChampionship();
@@ -319,7 +338,7 @@ public partial class MainWindow : Window
     {
         if (_engine == null)
         {
-            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv karriere", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Strings.T("Main_Msg_NoActiveCareer"), Strings.T("Main_Msg_NoActiveCareerTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -341,7 +360,7 @@ public partial class MainWindow : Window
 
         var text = PreRaceChecklist.BuildRecipeText(next, _engine.Career.CurrentClass, _engine.Career.CurrentManufacturer);
         Clipboard.SetText(text);
-        Log("📋 Oppskrift for neste løp kopiert til utklippstavlen.");
+        Log(Strings.T("Main_Log_CopiedRecipe"));
     }
 
     private void MiniWidgetButton_Click(object sender, RoutedEventArgs e)
@@ -364,18 +383,18 @@ public partial class MainWindow : Window
         if (_engine == null) return;
         var career = _engine.Career;
         AvatarBrush.ImageSource = AvatarImageCache.GetForDriver(career.DriverName, career.DriverName);
-        DriverNameText.Text = $"Fører: {career.DriverName}";
-        ClassText.Text = $"Klasse: {career.CurrentClass}   ·   Opplåst: {string.Join(", ", career.UnlockedClasses)}";
+        DriverNameText.Text = string.Format(Strings.T("Main_Header_Driver"), career.DriverName);
+        ClassText.Text = string.Format(Strings.T("Main_Header_Class"), career.CurrentClass, string.Join(", ", career.UnlockedClasses));
 
         var contract = career.CurrentContract;
         ManufacturerText.Text = contract == null
-            ? "Merke: -"
+            ? Strings.T("Main_Header_MakeEmpty")
             : contract.IsPrivateerSeat
-                ? "Merke: Privatlag (betalt sete)"
+                ? Strings.T("Main_Header_MakePrivateer")
                 : contract.IsFreeAgent
-                    ? "Merke: Fri kjøring (ingen merke-oppsett i klassen)"
-                    : $"Merke: {contract.Manufacturer}   ·   {contract.SeasonsRemaining} sesong(er) igjen   ·   " +
-                      $"{contract.SalaryPerRound} cr/runde   ·   Mål: {contract.GoalDescription}";
+                    ? Strings.T("Main_Header_MakeFreeAgent")
+                    : string.Format(Strings.T("Main_Header_MakeContract"), contract.Manufacturer, contract.SeasonsRemaining,
+                        contract.SalaryPerRound, contract.GoalDescription);
         LevelText.Text = career.Level.ToString();
         XpText.Text = career.TotalXp.ToString();
         SeasonPointsText.Text = (career.CurrentSeason?.TotalPoints ?? 0).ToString();
@@ -389,7 +408,7 @@ public partial class MainWindow : Window
         if (season == null)
         {
             _seasonRows.Clear();
-            NextRaceTitle.Text = "Venter på valg av klasse...";
+            NextRaceTitle.Text = Strings.T("Main_NextRaceWaiting");
             NextRaceDetail.Text = "-";
             CopyRecipeButton.IsEnabled = false;
             _miniWidget?.Refresh();
@@ -404,9 +423,9 @@ public partial class MainWindow : Window
 
         if (season.NextEvent is { } next)
         {
-            NextRaceTitle.Text = $"Runde {next.RoundNumber}: {next.TrackVenue} ({next.Format})";
-            NextRaceDetail.Text = $"Sett opp i LMU: {_engine!.Career.CurrentClass} - {next.AssignedCar}   ·   " +
-                                   $"~{next.SuggestedRaceMinutes} min race   ·   Vær: {next.AssignedWeather}";
+            NextRaceTitle.Text = string.Format(Strings.T("Main_NextRaceTitle"), next.RoundNumber, next.TrackVenue, next.Format);
+            NextRaceDetail.Text = string.Format(Strings.T("Main_NextRaceDetail"), _engine!.Career.CurrentClass, next.AssignedCar,
+                next.SuggestedRaceMinutes, next.AssignedWeather);
             CopyRecipeButton.IsEnabled = true;
         }
         else
@@ -434,17 +453,19 @@ public partial class MainWindow : Window
 
         if (season == null)
         {
-            ChampionshipSubTitleText.Text = "Ingen aktiv sesong ennå - velg klasse og signer en kontrakt.";
+            ChampionshipSubTitleText.Text = Strings.T("Main_ChampionshipNoSeason");
             DriverGrid.ItemsSource = null;
             ManufacturerGrid.ItemsSource = null;
             return;
         }
 
-        ChampionshipSubTitleText.Text = $"Sesong {season.SeasonNumber} ({season.CarClass})   ·   " +
-                                         $"{season.CompletedCount} av {season.Events.Count} runder kjørt" +
-                                         (season.LockedRosterNames.Count > 0
-                                             ? $"   ·   Feltet ble låst med {season.LockedRosterNames.Count} sjåfører etter runde 1"
-                                             : "   ·   Feltet låses når runde 1 er fullført");
+        var fieldStatus = season.LockedRosterNames.Count > 0
+            ? string.Format(Strings.T("Main_Championship_FieldLocked"), season.LockedRosterNames.Count)
+            : Strings.T("Main_Championship_FieldLocksNext");
+
+        ChampionshipSubTitleText.Text =
+            string.Format(Strings.T("Main_Championship_Header"), season.SeasonNumber, season.CarClass) + "   ·   " +
+            string.Format(Strings.T("Main_Championship_RoundsDone"), season.CompletedCount, season.Events.Count) + "   ·   " + fieldStatus;
 
         var lastRound = season.Events.Where(e => e.Completed).Select(e => e.RoundNumber).DefaultIfEmpty(0).Max();
         var driverStandings = _engine.GetDriverStandings(season);

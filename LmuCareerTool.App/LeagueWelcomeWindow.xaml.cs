@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using LmuCareerTool.App.Localization;
 using LmuCareerTool.Settings;
 using Microsoft.Win32;
 
@@ -35,27 +36,27 @@ public partial class LeagueWelcomeWindow : Window
         var name = LeagueNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            PrimaryButton.Content = "Start liga";
+            PrimaryButton.Content = Strings.T("LeagueWelcome_ButtonStart");
             WelcomeBackText.Visibility = Visibility.Collapsed;
             return;
         }
 
         if (File.Exists(AppPaths.LeagueFilePath(name)))
         {
-            PrimaryButton.Content = "Fortsett liga";
-            WelcomeBackText.Text = $"👋 Velkommen tilbake til {name}!";
+            PrimaryButton.Content = Strings.T("LeagueWelcome_ButtonContinue");
+            WelcomeBackText.Text = string.Format(Strings.T("LeagueWelcome_WelcomeBack"), name);
             WelcomeBackText.Visibility = Visibility.Visible;
         }
         else
         {
-            PrimaryButton.Content = "Opprett liga";
+            PrimaryButton.Content = Strings.T("LeagueWelcome_ButtonCreate");
             WelcomeBackText.Visibility = Visibility.Collapsed;
         }
     }
 
     private void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Velg LMU Results-mappe" };
+        var dialog = new OpenFolderDialog { Title = Strings.T("Common_BrowseResultsFolderTitle") };
         if (Directory.Exists(ResultsFolderBox.Text))
             dialog.InitialDirectory = ResultsFolderBox.Text;
 
@@ -77,20 +78,20 @@ public partial class LeagueWelcomeWindow : Window
 
         if (string.IsNullOrWhiteSpace(leagueName))
         {
-            ShowError("Skriv inn et liganavn først.");
+            ShowError(Strings.T("LeagueWelcome_ErrorNoLeagueName"));
             return;
         }
 
         var isReturning = File.Exists(AppPaths.LeagueFilePath(leagueName));
         if (!isReturning && string.IsNullOrWhiteSpace(hostName))
         {
-            ShowError("Skriv inn visningsnavnet ditt som vert.");
+            ShowError(Strings.T("LeagueWelcome_ErrorNoHostName"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(resultsFolder) || !Directory.Exists(resultsFolder))
         {
-            ShowError("Fant ikke Results-mappen. Velg riktig mappe med \"Bla gjennom...\".");
+            ShowError(Strings.T("Welcome_ErrorNoFolder"));
             return;
         }
 

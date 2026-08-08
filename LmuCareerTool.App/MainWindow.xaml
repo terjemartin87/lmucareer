@@ -1,7 +1,8 @@
 <Window x:Class="LmuCareerTool.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="LMU Karriere" Height="860" Width="1400" MinHeight="640" MinWidth="1080"
+        xmlns:loc="clr-namespace:LmuCareerTool.App.Localization"
+        Title="{loc:Loc Main_WindowTitle}" Height="860" Width="1400" MinHeight="640" MinWidth="1080"
         WindowState="Maximized"
         Background="{StaticResource BgColor}"
         FontFamily="Segoe UI">
@@ -24,8 +25,8 @@
             <Border Grid.Column="0" Background="{StaticResource NavColor}">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Margin="20,24,20,28">
-                        <TextBlock Text="🏁 LMU" FontSize="20" FontFamily="Segoe UI Semibold" />
-                        <TextBlock Text="KARRIERE" FontSize="12" Foreground="{StaticResource AccentColor}" FontFamily="Segoe UI Semibold" Margin="0,-2,0,0" />
+                        <TextBlock Text="{loc:Loc Main_LogoLine1}" FontSize="20" FontFamily="Segoe UI Semibold" />
+                        <TextBlock Text="{loc:Loc Main_LogoLine2}" FontSize="12" Foreground="{StaticResource AccentColor}" FontFamily="Segoe UI Semibold" Margin="0,-2,0,0" />
                     </StackPanel>
 
                     <TextBlock DockPanel.Dock="Bottom" x:Name="VersionText" Text="v0.6" Foreground="{StaticResource DisabledTextColor}"
@@ -33,17 +34,17 @@
 
                     <StackPanel DockPanel.Dock="Top">
                         <RadioButton x:Name="NavDashboard" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="🏠  Dashboard" IsChecked="True" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_Dashboard}" IsChecked="True" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavSeason" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="📅  Sesong" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_Season}" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavChampionship" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="🏆  Mesterskap" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_Championship}" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavHistory" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="📜  Historikk" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_History}" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavHelp" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="❓  Hjelp" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_Help}" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavSettings" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="⚙  Innstillinger" Checked="Nav_Checked" />
+                                     Content="{loc:Loc Main_Nav_Settings}" Checked="Nav_Checked" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -76,39 +77,39 @@
                                     </Ellipse>
                                 </Border>
                                 <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                                    <TextBlock x:Name="DriverNameText" Text="Fører: -" FontSize="20" FontFamily="Segoe UI Semibold" />
-                                    <TextBlock x:Name="ClassText" Text="Klasse: -" Foreground="{StaticResource MutedTextColor}" Margin="0,4,0,0" FontSize="12" />
-                                    <TextBlock x:Name="ManufacturerText" Text="Merke: -" Foreground="{StaticResource MutedTextColor}" Margin="0,2,0,0" FontSize="12" />
+                                    <TextBlock x:Name="DriverNameText" Text="{loc:Loc Main_Header_DriverEmpty}" FontSize="20" FontFamily="Segoe UI Semibold" />
+                                    <TextBlock x:Name="ClassText" Text="{loc:Loc Main_Header_ClassEmpty}" Foreground="{StaticResource MutedTextColor}" Margin="0,4,0,0" FontSize="12" />
+                                    <TextBlock x:Name="ManufacturerText" Text="{loc:Loc Main_Header_MakeEmpty}" Foreground="{StaticResource MutedTextColor}" Margin="0,2,0,0" FontSize="12" />
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Style="{StaticResource StatTileStyle}" Margin="0,0,10,0">
                                     <StackPanel>
-                                        <TextBlock Text="NIVÅ" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{loc:Loc Main_Header_Level}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="LevelText" Text="1" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentColor}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatTileStyle}" Margin="0,0,10,0">
                                     <StackPanel>
-                                        <TextBlock Text="TOTAL XP" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{loc:Loc Main_Header_TotalXp}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="XpText" Text="0" FontSize="22" FontFamily="Segoe UI Semibold" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatTileStyle}" Margin="0,0,10,0">
                                     <StackPanel>
-                                        <TextBlock Text="SESONGPOENG" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{loc:Loc Main_Header_SeasonPoints}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="SeasonPointsText" Text="0" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource GoodColor}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatTileStyle}" Margin="0,0,10,0">
                                     <StackPanel>
-                                        <TextBlock Text="RATING" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{loc:Loc Main_Header_Rating}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="RatingText" Text="50" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentBlue}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatTileStyle}">
                                     <StackPanel>
-                                        <TextBlock Text="CREDITS" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{loc:Loc Main_Header_Credits}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="CreditsText" Text="0" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentGold}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
@@ -138,13 +139,13 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="NESTE LØP" Foreground="{StaticResource AccentColor}" FontSize="11" FontFamily="Segoe UI Semibold" />
+                                        <TextBlock Text="{loc:Loc Main_NextRace}" Foreground="{StaticResource AccentColor}" FontSize="11" FontFamily="Segoe UI Semibold" />
                                         <TextBlock x:Name="NextRaceTitle" Text="-" FontSize="20" FontFamily="Segoe UI Semibold" Margin="0,4,0,8" />
                                         <TextBlock x:Name="NextRaceDetail" Text="-" TextWrapping="Wrap" Foreground="{StaticResource MutedTextColor}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Top">
-                                        <Button x:Name="CopyRecipeButton" Content="📋 Kopier oppskrift" Padding="12,8" IsEnabled="False" Click="CopyRecipeButton_Click" />
-                                        <Button x:Name="MiniWidgetButton" Content="🗗 Kompakt visning" Padding="12,8" Margin="0,8,0,0"
+                                        <Button x:Name="CopyRecipeButton" Content="{loc:Loc Main_CopyRecipeButton}" Padding="12,8" IsEnabled="False" Click="CopyRecipeButton_Click" />
+                                        <Button x:Name="MiniWidgetButton" Content="{loc:Loc Main_MiniWidgetButton}" Padding="12,8" Margin="0,8,0,0"
                                                 Style="{StaticResource SecondaryButtonStyle}" Click="MiniWidgetButton_Click" />
                                     </StackPanel>
                                 </Grid>
@@ -164,14 +165,14 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="LIVE-LOGG" Style="{StaticResource SectionHeaderStyle}" />
-                                            <TextBlock Grid.Column="1" Text="❓ Hvordan fungerer dette?" Foreground="{StaticResource AccentBlue}"
+                                            <TextBlock Grid.Column="0" Text="{loc:Loc Main_LiveLog}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Grid.Column="1" Text="{loc:Loc Main_HowDoesThisWork}" Foreground="{StaticResource AccentBlue}"
                                                        FontSize="12" Cursor="Hand" MouseLeftButtonUp="HelpLink_MouseLeftButtonUp" />
                                         </Grid>
                                         <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceColor}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="StatusIcon" Text="⏳" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center" />
-                                                <TextBlock x:Name="DashboardStatusText" Text="Fyll ut oppsett og trykk Start for å komme i gang."
+                                                <TextBlock x:Name="DashboardStatusText" Text="{loc:Loc Main_DashboardStatusDefault}"
                                                            Foreground="{StaticResource MutedTextColor}" TextWrapping="Wrap" VerticalAlignment="Center" />
                                             </StackPanel>
                                         </Border>
@@ -182,7 +183,7 @@
 
                                 <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                                     <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="SISTE LØP" Style="{StaticResource SectionHeaderStyle}" />
+                                        <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_RecentRaces}" Style="{StaticResource SectionHeaderStyle}" />
                                         <ListBox x:Name="RecentHistoryListBox" Background="Transparent" BorderThickness="0" MouseDoubleClick="HistoryListBox_MouseDoubleClick">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
@@ -206,16 +207,16 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" x:Name="SeasonHeaderText" Text="SESONGKALENDER" Style="{StaticResource SectionHeaderStyle}" />
+                                    <TextBlock Grid.Row="0" x:Name="SeasonHeaderText" Text="{loc:Loc Main_SeasonCalendar}" Style="{StaticResource SectionHeaderStyle}" />
                                     <DataGrid Grid.Row="1" x:Name="SeasonGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Runde" Binding="{Binding Round}" Width="60" />
-                                            <DataGridTextColumn Header="Bane" Binding="{Binding Track}" Width="*" />
-                                            <DataGridTextColumn Header="Format" Binding="{Binding Format}" Width="100" />
-                                            <DataGridTextColumn Header="Vær" Binding="{Binding Weather}" Width="160" />
-                                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
-                                            <DataGridTextColumn Header="Resultat" Binding="{Binding Result}" Width="150" />
-                                            <DataGridTextColumn Header="Poeng" Binding="{Binding Points}" Width="70" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Round}" Binding="{Binding Round}" Width="60" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Track}" Binding="{Binding Track}" Width="*" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Format}" Binding="{Binding Format}" Width="100" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Weather}" Binding="{Binding Weather}" Width="160" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Status}" Binding="{Binding Status}" Width="100" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Result}" Binding="{Binding Result}" Width="150" />
+                                            <DataGridTextColumn Header="{loc:Loc Main_Col_Points}" Binding="{Binding Points}" Width="70" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
@@ -228,7 +229,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" x:Name="ChampionshipSubTitleText" Text="Ingen aktiv sesong."
+                            <TextBlock Grid.Row="0" x:Name="ChampionshipSubTitleText" Text="{loc:Loc Main_ChampionshipNoSeason}"
                                        Foreground="{StaticResource MutedTextColor}" Margin="0,0,0,16" />
                             <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
@@ -239,7 +240,7 @@
 
                                 <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                                     <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="FØRERMESTERSKAP" Style="{StaticResource SectionHeaderStyle}" />
+                                        <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_DriverChampionship}" Style="{StaticResource SectionHeaderStyle}" />
                                         <DataGrid x:Name="DriverGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                             <DataGrid.Columns>
                                                 <DataGridTemplateColumn Header="" Width="34">
@@ -253,13 +254,13 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="30" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Pos}" Binding="{Binding Position}" Width="30" />
                                                 <DataGridTextColumn Header="" Binding="{Binding Trend}" Width="24" />
-                                                <DataGridTextColumn Header="Fører" Binding="{Binding Name}" Width="*" />
-                                                <DataGridTextColumn Header="Team" Binding="{Binding Team}" Width="140" />
-                                                <DataGridTextColumn Header="Poeng" Binding="{Binding Points}" Width="60" />
-                                                <DataGridTextColumn Header="Seire" Binding="{Binding Wins}" Width="55" />
-                                                <DataGridTextColumn Header="Podium" Binding="{Binding Podiums}" Width="65" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Driver}" Binding="{Binding Name}" Width="*" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Team}" Binding="{Binding Team}" Width="140" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Points}" Binding="{Binding Points}" Width="60" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Wins}" Binding="{Binding Wins}" Width="55" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Podiums}" Binding="{Binding Podiums}" Width="65" />
                                             </DataGrid.Columns>
                                         </DataGrid>
                                     </DockPanel>
@@ -267,13 +268,13 @@
 
                                 <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                                     <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="MERKEMESTERSKAP" Style="{StaticResource SectionHeaderStyle}" />
+                                        <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_ManufacturerChampionship}" Style="{StaticResource SectionHeaderStyle}" />
                                         <DataGrid x:Name="ManufacturerGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="30" />
-                                                <DataGridTextColumn Header="Merke" Binding="{Binding Manufacturer}" Width="*" />
-                                                <DataGridTextColumn Header="Poeng" Binding="{Binding Points}" Width="60" />
-                                                <DataGridTextColumn Header="Seire" Binding="{Binding Wins}" Width="55" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Pos}" Binding="{Binding Position}" Width="30" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Manufacturer}" Binding="{Binding Manufacturer}" Width="*" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Points}" Binding="{Binding Points}" Width="60" />
+                                                <DataGridTextColumn Header="{loc:Loc Main_Col_Wins}" Binding="{Binding Wins}" Width="55" />
                                             </DataGrid.Columns>
                                         </DataGrid>
                                     </DockPanel>
@@ -285,8 +286,8 @@
                         <Grid x:Name="HistoryPanel" Visibility="Collapsed">
                             <Border Style="{StaticResource CardStyle}">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Text="HELE LØPSHISTORIKKEN" Style="{StaticResource SectionHeaderStyle}" />
-                                    <TextBlock DockPanel.Dock="Top" Text="Dobbeltklikk for detaljer (Practice/Qualifying/Race)"
+                                    <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_FullHistory}" Style="{StaticResource SectionHeaderStyle}" />
+                                    <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_FullHistoryHelp}"
                                                Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,10" />
                                     <ListBox x:Name="HistoryListBox" Background="Transparent" BorderThickness="0" MouseDoubleClick="HistoryListBox_MouseDoubleClick">
                                         <ListBox.ItemTemplate>
@@ -311,78 +312,65 @@
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <TextBlock Text="HVA ER DETTE?" Style="{StaticResource SectionHeaderStyle}" />
-                                            <TextBlock TextWrapping="Wrap">
-                                                LMU Karriere styrer <Run FontFamily="Segoe UI Semibold">ikke</Run> spillet - det kan ikke sette opp Race Weekend for deg.
-                                                I stedet forteller det deg nøyaktig hva du skal sette opp (bane, bil, format, vær), du kjører løpet
-                                                manuelt i LMU, og verktøyet oppdager automatisk resultatfilen etterpå og oppdaterer karrieren din:
-                                                XP, poeng, mesterskapstabell, Rating, Credits og kontrakter.
-                                            </TextBlock>
+                                            <TextBlock Text="{loc:Loc Main_Help_WhatIsThisHeader}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Text="{loc:Loc Main_Help_WhatIsThisBody}" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <TextBlock Text="SLIK SETTER DU OPP ET LØP" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Text="{loc:Loc Main_Help_SetupHeader}" Style="{StaticResource SectionHeaderStyle}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                                 <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
                                                     <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
                                                 </Border>
-                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="I LMUs hovedmeny: velg 'Race Weekend' - IKKE Multiplayer. Kun Race Weekend bruker spillets faste WEC-startliste, som gjør et ekte mesterskap med faste rivaler mulig. Multiplayer-løp blir logget, men teller aldri mot karrieren." />
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="{loc:Loc Main_Help_Setup1}" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                                 <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
                                                     <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
                                                 </Border>
-                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Match 'Neste løp'-kortet på Dashboard nøyaktig: klasse, bil (merket krever EN spesifikk bil for hele sesongen), bane og vær. Bruk 'Kopier oppskrift'-knappen for å ha alt ved siden av deg mens du setter opp." />
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="{loc:Loc Main_Help_Setup2}" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                                 <Border Background="{StaticResource AccentColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
                                                     <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" />
                                                 </Border>
-                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Kjør Practice/Qualifying/Race som normalt - antall AI-motstandere styres av spillets egne baneinnstillinger, ikke av verktøyet." />
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="{loc:Loc Main_Help_Setup3}" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal">
                                                 <Border Background="{StaticResource GoodColor}" CornerRadius="12" Width="24" Height="24" Margin="0,0,10,0">
                                                     <TextBlock Text="4" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe UI Semibold" FontSize="12" Foreground="#FF0B0D12" />
                                                 </Border>
-                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="Ferdig! Så snart løpet er over, oppdager verktøyet den nye resultatfilen automatisk - du trenger ikke gjøre noe mer. Sjekk live-loggen på Dashboard." />
+                                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Text="{loc:Loc Main_Help_Setup4}" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <TextBlock Text="HVIS OPPSETTET IKKE STEMMER" Style="{StaticResource SectionHeaderStyle}" />
-                                            <TextBlock TextWrapping="Wrap">
-                                                Kjørte du feil bane eller feil bil for sesongrunden? Verktøyet varsler deg med et gult ikon i loggen
-                                                og et popup-vindu der du kan velge å <Run FontFamily="Segoe UI Semibold">godkjenne runden likevel</Run> -
-                                                din egen karriere, dine egne regler. Sier du nei, kan du bare kjøre runden på nytt med riktig oppsett.
-                                            </TextBlock>
+                                            <TextBlock Text="{loc:Loc Main_Help_MismatchHeader}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Text="{loc:Loc Main_Help_MismatchBody}" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <TextBlock Text="SYSTEMENE, KORT FORKLART" Style="{StaticResource SectionHeaderStyle}" />
-                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentColor}">XP og Nivå</Run> - tjent per fullført sesongrunde. Nok XP låser opp nye klasser (GT3 → LMP3 → LMP2 → Hypercar).</TextBlock>
-                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource GoodColor}">Sesongpoeng</Run> - F1-poengskala (25-18-15...) per plassering. Din egen sammenlagtsum for sesongen, vist i Mesterskap-fanen sammen med resten av feltet.</TextBlock>
-                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentBlue}">Rating</Run> - stiger av gode og rene resultater (0-100, start 50). Avgjør hvor interessert et merke er i deg.</TextBlock>
-                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentGold}">Credits</Run> - spillvaluta tjent per løp + kontraktlønn. Brukes til bruddsummer og betalte privatlag-seter - aldri til å kjøpe deg en fabrikkontrakt du ikke har fortjent.</TextBlock>
-                                            <TextBlock TextWrapping="Wrap"><Run FontFamily="Segoe UI Semibold">Kontrakter</Run> - se eget avsnitt under.</TextBlock>
+                                            <TextBlock Text="{loc:Loc Main_Help_SystemsHeader}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Text="{loc:Loc Main_Help_SystemsXp}" />
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Text="{loc:Loc Main_Help_SystemsPoints}" />
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Text="{loc:Loc Main_Help_SystemsRating}" />
+                                            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Text="{loc:Loc Main_Help_SystemsCredits}" />
+                                            <TextBlock TextWrapping="Wrap" Text="{loc:Loc Main_Help_SystemsContracts}" />
                                         </StackPanel>
                                     </Border>
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
-                                            <TextBlock Text="TRANSFER-MARKEDET - HVOR KOMMER TILBUD FRA?" Style="{StaticResource SectionHeaderStyle}" />
-                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                                Merkene sender IKKE tilbud midt i en sesong - de vurderer deg på to faste tidspunkt: når du starter en helt ny karriere, og hver gang en sesong er fullført. Hvert merke regner ut en interesse-score fra Rating din (mot merkets krav), hvordan forrige sesong gikk, og hvor rent du kjørte. Er du mer enn 10 Rating-poeng under kravet, vurderer de deg ikke i det hele tatt ennå.
-                                            </TextBlock>
-                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                                                Har du allerede kontrakt med et merke og innfridde forrige sesongmål, får du en fornyelse i stedet for et nytt tilbud. Innfrir du IKKE målet, kan merket si deg opp. Uansett hvor dårlig det går, finnes alltid et betalt sete hos et privatlag som fallback (mot en engangskostnad, ingen lønn).
-                                            </TextBlock>
-                                            <Button x:Name="CheckInterestButton" Content="🔍 Sjekk merkeinteresse akkurat nå" HorizontalAlignment="Left"
+                                            <TextBlock Text="{loc:Loc Main_Help_TransferHeader}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Text="{loc:Loc Main_Help_TransferBody1}" />
+                                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Text="{loc:Loc Main_Help_TransferBody2}" />
+                                            <Button x:Name="CheckInterestButton" Content="{loc:Loc Main_Help_CheckInterestButton}" HorizontalAlignment="Left"
                                                     Style="{StaticResource SecondaryButtonStyle}" Click="CheckInterestButton_Click" />
                                         </StackPanel>
                                     </Border>
@@ -393,36 +381,45 @@
 
                         <!-- INNSTILLINGER -->
                         <Grid x:Name="SettingsPanel" Visibility="Collapsed">
-                            <Border Style="{StaticResource CardStyle}" VerticalAlignment="Top">
-                                <StackPanel>
-                                    <TextBlock Text="OPPSETT" Style="{StaticResource SectionHeaderStyle}" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                            <TextBlock Text="LMU Results-mappe" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
-                                                <Button Grid.Column="1" Content="Bla gjennom..." Style="{StaticResource SecondaryButtonStyle}"
-                                                        Padding="10,8" Click="BrowseResultsFolderButton_Click" />
-                                            </Grid>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                                            <TextBlock Text="Ditt LMU-visningsnavn" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
-                                            <TextBox x:Name="PlayerNameBox" />
-                                        </StackPanel>
-                                        <Button x:Name="StartStopButton" Grid.Column="2" Content="Start overvåking" VerticalAlignment="Bottom" Click="StartStopButton_Click" />
-                                    </Grid>
-                                    <TextBlock x:Name="StatusText" Text="Ikke startet." Foreground="{StaticResource MutedTextColor}" Margin="0,14,0,0" />
-                                </StackPanel>
-                            </Border>
+                            <StackPanel VerticalAlignment="Top">
+                                <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock Text="{loc:Loc Main_Settings_Setup}" Style="{StaticResource SectionHeaderStyle}" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                <TextBlock Text="{loc:Loc Main_Settings_ResultsFolder}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
+                                                    <Button Grid.Column="1" Content="{loc:Loc Common_Browse}" Style="{StaticResource SecondaryButtonStyle}"
+                                                            Padding="10,8" Click="BrowseResultsFolderButton_Click" />
+                                                </Grid>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                                <TextBlock Text="{loc:Loc Main_Settings_PlayerName}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
+                                                <TextBox x:Name="PlayerNameBox" />
+                                            </StackPanel>
+                                            <Button x:Name="StartStopButton" Grid.Column="2" Content="{loc:Loc Main_Settings_StartWatching}" VerticalAlignment="Bottom" Click="StartStopButton_Click" />
+                                        </Grid>
+                                        <TextBlock x:Name="StatusText" Text="{loc:Loc Main_Settings_StatusNotStarted}" Foreground="{StaticResource MutedTextColor}" Margin="0,14,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource CardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{loc:Loc Common_LanguageLabel}" Style="{StaticResource SectionHeaderStyle}" />
+                                        <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left" SelectionChanged="LanguageBox_SelectionChanged" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </Grid>
                     </Grid>
                 </Grid>
