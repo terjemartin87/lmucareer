@@ -16,6 +16,7 @@ public partial class SeasonReportWindow : Window
     public SeasonReportWindow(SeasonReport report, string driverName)
     {
         InitializeComponent();
+        DarkTitleBarHelper.Apply(this);
         _report = report;
         _driverName = driverName;
 

@@ -13,28 +13,64 @@
         <Setter Property="FontFamily" Value="Segoe UI" />
     </Style>
 
-    <!-- ===== Button ===== -->
+    <!-- Seksjonsoverskrift: liten, stor bokstav-følelse, luftig - brukt over hver tabell/kortgruppe. -->
+    <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource MutedTextColor}" />
+        <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+
+    <Style x:Key="PageTitleStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="24" />
+    </Style>
+
+    <!-- ===== Kort (Border) - gjenbrukbar panel-stil med skygge, i stedet for å gjenta samme inline-stil overalt. ===== -->
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PanelColor}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.28" Color="Black" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Button (primær - racing-rød gradient) ===== -->
     <Style TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource AccentColor}" />
+        <Setter Property="Background" Value="{StaticResource AccentGradient}" />
         <Setter Property="Foreground" Value="White" />
-        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="Padding" Value="16,10" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.35" Color="#FFFF3B45" />
+                        </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                           TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource BorderColor}" />
+                            <Setter TargetName="Bd" Property="Effect" Value="{x:Null}" />
                             <Setter Property="Foreground" Value="{StaticResource DisabledTextColor}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Opacity" Value="0.88" />
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.9" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.78" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -42,19 +78,106 @@
         </Setter>
     </Style>
 
+    <!-- ===== SecondaryButton - rolig variant for "Lukk"/"Avbryt"/ikke-primærhandlinger ===== -->
+    <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource PanelHoverColor}" />
+        <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+        <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource DisabledTextColor}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceColor}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentColor}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Venstre navigasjonsknapp (RadioButton-basert faneskifte) - Fase 6 ===== -->
+    <Style x:Key="NavButtonStyle" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource MutedTextColor}" />
+        <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="{TemplateBinding Padding}" Margin="8,2">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Indicator" Grid.Column="0" Width="3" CornerRadius="2" Background="{StaticResource AccentColor}" Opacity="0" Margin="0,2" />
+                            <ContentPresenter Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceColor}" />
+                            <Setter TargetName="Indicator" Property="Opacity" Value="1" />
+                            <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelHoverColor}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Statistikk-kort (StackPanel-mal for NIVÅ/XP/RATING osv, brukt via ContentControl) ===== -->
+    <Style x:Key="StatTileStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SurfaceColor}" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
     <!-- ===== TextBox ===== -->
     <Style TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource PanelColor}" />
+        <Setter Property="Background" Value="{StaticResource SurfaceColor}" />
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
         <Setter Property="CaretBrush" Value="{StaticResource TextColor}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Padding" Value="10,8" />
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="SelectionBrush" Value="{StaticResource AccentColor}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
-    <!-- ===== RadioButton ===== -->
+    <!-- ===== RadioButton (standard, brukt i garasje-tilbudskort) ===== -->
     <Style TargetType="RadioButton">
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
         <Setter Property="FontFamily" Value="Segoe UI" />
@@ -67,7 +190,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Ellipse x:Name="Outer" Width="18" Height="18" Stroke="{StaticResource MutedTextColor}"
-                                 StrokeThickness="1.5" Fill="{StaticResource BgColor}" />
+                                 StrokeThickness="1.5" Fill="{StaticResource BgSolid}" />
                         <Ellipse x:Name="Inner" Width="9" Height="9" Fill="{StaticResource AccentColor}" Opacity="0" />
                         <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
                                           TextElement.Foreground="{StaticResource TextColor}" />
@@ -119,10 +242,10 @@
          look empty (near-white text on the OS's default white popup background). -->
     <Style TargetType="ComboBox">
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
-        <Setter Property="Background" Value="{StaticResource PanelColor}" />
+        <Setter Property="Background" Value="{StaticResource SurfaceColor}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Padding" Value="10,8" />
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="Template">
             <Setter.Value>
@@ -133,14 +256,14 @@
                                       ClickMode="Press">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
-                                    <Border Background="{StaticResource PanelColor}" BorderBrush="{StaticResource BorderColor}"
-                                            BorderThickness="1" CornerRadius="6">
+                                    <Border Background="{StaticResource SurfaceColor}" BorderBrush="{StaticResource BorderColor}"
+                                            BorderThickness="1" CornerRadius="7">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="24" />
                                             </Grid.ColumnDefinitions>
-                                            <Path Grid.Column="1" Data="M0,0 L4,4 L8,0 Z" Fill="{StaticResource MutedTextColor}"
+                                            <Path Grid.Column="1" Data="M0,0 L4,4 L8,0 Z" Fill="{StaticResource AccentColor}"
                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Grid>
                                     </Border>
@@ -156,8 +279,8 @@
                                           TextElement.Foreground="{TemplateBinding Foreground}" />
                         <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
                                AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
-                            <Border x:Name="DropDownBorder" Background="{StaticResource PanelColor}"
-                                    BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="6"
+                            <Border x:Name="DropDownBorder" Background="{StaticResource SurfaceColor}"
+                                    BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="7"
                                     MinWidth="{TemplateBinding ActualWidth}" MaxHeight="260"
                                     SnapsToDevicePixels="True">
                             <Border.Effect>
@@ -184,33 +307,45 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="RowBackground" Value="Transparent" />
-        <Setter Property="AlternatingRowBackground" Value="#FF20232B" />
+        <Setter Property="AlternatingRowBackground" Value="{StaticResource RowAltColor}" />
         <Setter Property="GridLinesVisibility" Value="None" />
         <Setter Property="HeadersVisibility" Value="Column" />
         <Setter Property="CanUserAddRows" Value="False" />
         <Setter Property="CanUserSortColumns" Value="False" />
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
         <Setter Property="RowHeaderWidth" Value="0" />
+        <Setter Property="RowHeight" Value="34" />
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource MutedTextColor}" />
-        <Setter Property="Padding" Value="6,6" />
+        <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Padding" Value="8,8" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
     </Style>
 
     <Style TargetType="DataGridCell">
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="6,8" />
+        <Setter Property="Padding" Value="8,6" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
-        <Style.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource PanelHoverColor}" />
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center" SnapsToDevicePixels="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelHoverColor}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ===== ListBox ===== -->
@@ -224,14 +359,52 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource TextColor}" />
         <Setter Property="Padding" Value="0" />
-        <Style.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{StaticResource PanelHoverColor}" />
-            </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource PanelHoverColor}" />
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelHoverColor}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelHoverColor}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== ScrollBar (slank, mørk - standard OS-rullefelt skiller seg ut i mørkt tema) ===== -->
+    <Style x:Key="RacingScrollBarThumb" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="{StaticResource BorderColor}" CornerRadius="4" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ScrollBar">
+        <Setter Property="Width" Value="9" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource RacingScrollBarThumb}" />
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

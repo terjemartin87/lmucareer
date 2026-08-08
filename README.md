@@ -37,11 +37,15 @@ mesterskapstabell, rating, credits og kontrakter.
 | Transfer-marked / kontrakter | ✅ Interesse-baserte tilbud, lønn, sesongmål, oppsigelse (Fase 3) |
 | Sesongavslutning med oppsummering | ✅ Full rapport, priser, personlige rekorder, PNG/HTML-eksport (Fase 4) |
 | Fører-portretter | ✅ Portrett-system med faste bilder for deg og alle AI-motstandere (Fase 5, omfang endret fra 3D) |
-| Installer | ❌ Finnes ikke - Fase 7 |
+| Visuell design (GT-racing tema) | ✅ Ny fargepalett, kort-UI, venstre-nav, mørk tittellinje (Fase 6) |
+| Installer | ✅ Inno Setup + self-contained publish (Fase 7, se begrensning under) |
 | Tester | ❌ Finnes ikke - Fase 8 |
 
-Fase 0, 1, 2, 3, 4 og 5 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og
-hva som bevisst ble utelatt eller forenklet fra den opprinnelige planen.
+Fase 0-7 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva som
+bevisst ble utelatt eller forenklet fra den opprinnelige planen. **Merk:** selve Inno
+Setup-kompileringen (Fase 7) er ikke kjørt i denne sandkassen siden Inno Setup ikke er
+installert her - du må kjøre `Installer\build-installer.ps1` selv for å produsere den
+faktiske installer-.exe-en.
 
 ---
 
@@ -153,9 +157,12 @@ igjen i kalenderen, eller du kjører runde 5 før runde 3, blir feil runde kredi
 ## Arkitektur og filstruktur
 
 Målbildet etter alle fasene. `[N]` viser hvilken fase filen kommer inn i; filer uten markør
-finnes allerede. **`[0]`-`[5]` er nå bygget** (bortsett fra `Directory.Build.props`,
-`Views/`/`ViewModels/`-flyttingen, `AiResultSynthesizer.cs`, `TransferWindow.cs` og
-`Views/GarageWindow.xaml` - se avvik under hver fase).
+finnes allerede. **`[0]`-`[7]` er nå bygget** (bortsett fra `Directory.Build.props`,
+`Views/`/`ViewModels/`-flyttingen, `AiResultSynthesizer.cs`, `TransferWindow.cs`,
+`Views/GarageWindow.xaml`, `ChampionshipView.xaml` (bygget inn som fane i stedet, se
+Fase 6-avvik) og `FirstRunWizard.xaml` - se avvik under hver fase). Nye i Fase 6/7:
+`DarkTitleBarHelper.cs`, `ToastVm.cs`, `MiniWidgetWindow.xaml`, `Settings/AppPaths.cs`,
+`Assets/app.ico`, `Installer/LmuCareerTool.iss`, `Installer/build-installer.ps1`.
 
 ```
 LmuCareerTool/
@@ -511,32 +518,75 @@ opp egne bilder for AI-motstandere (portrettene er faste, ferdig-genererte filer
 (rotering, dra-for-å-se-fra-andre-vinkler) er utsatt til det evt. finnes ekte 3D-modeller å
 vise - å bygge en `Viewport3D` rundt et flatt bilde ville bare vært et falskt "3D"-ikon.
 
-### Fase 6 – UX-oppussing 🟢
+### Fase 6 – UX-oppussing ✅ Ferdig (+ full visuell redesign)
 
-* Ekte MVVM (Fase 0 legger grunnlaget) i stedet for kode-bak som roter i kontroller.
-* Venstremeny med faner: **Neste løp · Sesong · Mesterskap · Garasje · Fører · Historikk**.
-* Oppsettspanelet skjules etter førstegangsoppsett.
-* Toast-varsler for opplåsinger, tilbud og feil oppsett, i stedet for kun logglinjer.
-* «Neste løp»-kortet får kopier-knapp og eventuelt en alltid-øverst mini-widget du kan ha
-  synlig mens du er i LMU-menyene.
+Kombinert med et gjennomgående design-løft: ny GT-racing fargepalett (`Theme/Colors.xaml`) -
+karbon-mørk bunn, racing-rød/gull aksentgradient, en diagonal "racing stripe" som gjennomgående
+motiv (toppen av vinduet, mini-widgeten, app-ikonet), kort med skygge (`CardStyle` i
+`Theme/Controls.xaml`) i stedet for flate paneler, og native mørk Windows-tittellinje
+(`DarkTitleBarHelper.cs`, DWM-attributt) på alle vinduer i stedet for en lys stripe som brøt
+det mørke temaet.
 
-### Fase 7 – Windows-installer 🟡
+* **Venstremeny med faner** i `MainWindow`: Dashboard · Sesong · Mesterskap · Historikk ·
+  Innstillinger. `ChampionshipWindow` (eget vindu fra Fase 2) er avviklet og bygget inn som
+  Mesterskap-fanen direkte - én mindre popup å forholde seg til.
+* **Oppsettspanelet "skjules" via navigasjonen**: Innstillinger er nå bare én fane blant flere
+  i stedet for et alltid-synlig skjema. Appen navigerer automatisk til Dashboard når
+  overvåking starter.
+* **Toast-varsler** (`ToastVm.cs` + overlay i `MainWindow.xaml`): nye XP/poeng, opplåsinger,
+  sesong fullført og feil oppsett dukker nå opp som selvforsvinnende kort øverst til høyre,
+  ikke bare som en linje i loggen.
+* **Kopier-knapp** på "Neste løp"-kortet (fra Fase 1) pluss en ny **alltid-øverst
+  mini-widget** (`MiniWidgetWindow.xaml`) du kan ha synlig oppå LMUs egne menyer mens du
+  setter opp Race Weekend - viser neste runde, Rating og Credits, oppdateres live.
 
-Målet ditt: kompisen laster ned én fil, kjører den, og alt er klart.
+**Avvik fra opprinnelig plan:** ingen fullstendig MVVM-omskriving (ViewModelBase,
+bindings-only kode-bak) - appen bruker fortsatt kode-bak-mønsteret fra tidligere faser, bare
+bedre organisert. Full MVVM ville vært en stor omskriving med reell risiko for regresjoner,
+uten at det endrer hva appen faktisk gjør. `Views/`/`ViewModels/`-mappeflyttingen er også
+fortsatt ikke gjort (kun kosmetisk filorganisering, ingen funksjonell verdi).
 
-* **Inno Setup** (ikke WiX – langt enklere, og du trenger ingen MSI-funksjoner).
-* `dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true`
-  slik at .NET 10 **ikke** må installeres på forhånd.
-* **Per-bruker-installasjon** til `%LOCALAPPDATA%\Programs\LmuCareerTool` → ingen
-  administrator-rettigheter, ingen UAC-prompt.
-* Karriere-, innstillings- og innholdsfiler flyttes til
-  `%LOCALAPPDATA%\LmuCareerTool\` (**F8**). Avinstallering spør om karrieren skal beholdes.
-* Startmeny- og skrivebordssnarvei, riktig ikon, versjonsinfo i .exe-en.
-* `FirstRunWizard`: finner LMU automatisk (Steam-registry + `libraryfolders.vdf`), foreslår
-  Results-mappa, ber om førernavn, verifiserer at navnet faktisk finnes i en av resultatfilene
-  dine, og lar deg velge startklasse. Full validering før du kommer inn i appen.
-* `build-installer.ps1` gjør alt i én kommando.
-* Bonus senere: oppdateringssjekk mot GitHub Releases.
+### Fase 7 – Windows-installer ✅ Ferdig
+
+Målet var at en kompis skal kunne laste ned én fil, kjøre den, og være klar.
+
+* **Self-contained single-file publish**: `LmuCareerTool.App.csproj` uendret for vanlig
+  `dotnet build`/`dotnet run` (rask iterasjon), men `build-installer.ps1` kjører
+  `dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true` som egne
+  kommandolinjeflagg - så .NET 10 **ikke** må være installert på forhånd. Bevisst *ikke* lagt
+  inn som permanente csproj-properties, siden det ville gjort hver vanlig `dotnet build` treg
+  og plattformlåst.
+* **Alle lagrede data flyttet til `%LOCALAPPDATA%\LmuCareerTool\`** (`Settings/AppPaths.cs`,
+  **F8**) - karriere, innstillinger og pending-cache. Dette var reelt nødvendig, ikke bare
+  "fint å ha": den gamle "lagre ved siden av .exe-en"-oppførselen ville feilet stille så snart
+  appen faktisk ble installert et sted (spesielt en installer-mappe, som ofte er
+  skrivebeskyttet).
+* **App-ikon** (`Assets/app.ico`): generert programmatisk (mørk bakgrunn, racing-stripe,
+  "GT"-monogram i samme stil som førerportrettenes GT-merke) siden det ikke fantes noe
+  ikon-grafikk i prosjektet fra før - se `Assets/app-icon-512.png` for full oppløsning.
+* **`Installer/LmuCareerTool.iss`**: Inno Setup-skript. **Per-bruker-installasjon** til
+  `%LOCALAPPDATA%\Programs\LmuCareerTool` (`PrivilegesRequired=lowest`) → ingen
+  administrator-rettigheter, ingen UAC-prompt. Startmeny- og valgfri skrivebordssnarvei.
+  Avinstallering spør eksplisitt om karrieredataene i `%LOCALAPPDATA%\LmuCareerTool\` skal
+  slettes (default: behold dem).
+* **`Installer/build-installer.ps1`**: publiserer + kompilerer installeren i én kommando.
+  Verifisert i denne sandkassen - `dotnet publish`-steget kjører rent og produserer en
+  kjørbar 68 MB `.exe` (testet: startet og kjørte selvstendig uten .NET-runtime installert
+  separat). Selve Inno Setup-kompileringen kunne **ikke** testes her siden Inno Setup 6 ikke
+  er installert i sandkassen - scriptet oppdager dette og gir deg en tydelig beskjed med
+  nedlastingslink i stedet for å feile kryptisk. Du må kjøre `build-installer.ps1` selv på din
+  egen maskin (med Inno Setup installert) for å faktisk produsere `Installer\Output\*.exe`.
+
+**Avvik fra opprinnelig plan:**
+* Ingen egen `FirstRunWizard`-vindu. Førstegangsoppsettet er i stedet Innstillinger-fanen
+  (fra Fase 6-redesignet) med `LmuPathLocator` (Fase 1) som allerede fyller inn Results-mappa
+  automatisk. En egen fler-stegs veiviser ble vurdert som unødvendig kompleksitet for noe
+  ett skjermbilde allerede løser greit.
+* Ingen automatisk verifisering av at spillernavnet faktisk finnes i en resultatfil ved
+  oppstart - `validate`-kommandoen (Fase 1) dekker et beslektet behov (verifiserer
+  bil-/banenavn), men selve navneverifiseringen er ikke bygget.
+* Ingen oppdateringssjekk mot GitHub Releases - reint fremtidig arbeid, ingen avhengigheter
+  bygget for det ennå.
 
 ### Fase 8 – Tester og vedlikehold 🟢
 
@@ -590,8 +640,20 @@ dotnet run --project LmuCareerTool.App
 dotnet run --project LmuCareerTool.Console -- validate
 ```
 
-Innstillinger lagres i `settings.json`, karrieren i `career_<navn>.json`
-(flyttes til `%LOCALAPPDATA%\LmuCareerTool\` i Fase 7).
+Innstillinger og karriere (`career_<navn>.json`) lagres i `%LOCALAPPDATA%\LmuCareerTool\`.
+
+### Bygge en installer til en kompis
+
+Krever [Inno Setup 6](https://jrsoftware.org/isdl.php) (gratis) installert på maskinen som
+bygger installeren - ikke på maskinen som skal kjøre appen.
+
+```powershell
+.\Installer\build-installer.ps1
+```
+
+Publiserer en self-contained single-file build og kompilerer den til
+`Installer\Output\LmuCareerTool-Setup-<versjon>.exe`. Kompisen din trenger ikke .NET
+installert fra før - installeren er alt som skal til.
 
 ---
 

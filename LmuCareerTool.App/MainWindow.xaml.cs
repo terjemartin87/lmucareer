@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
 using LmuCareerTool.Settings;
 using LmuCareerTool.Career;
 using LmuCareerTool.Models;
@@ -11,20 +14,26 @@ namespace LmuCareerTool.App;
 
 public partial class MainWindow : Window
 {
-    private readonly AppSettingsStore _settingsStore = new(GetSettingsPath());
+    private readonly AppSettingsStore _settingsStore = new(AppPaths.SettingsFilePath);
     private readonly HashSet<string> _processedFiles = new(StringComparer.OrdinalIgnoreCase);
 
     private CareerEngine? _engine;
     private ResultsWatcher? _watcher;
+    private MiniWidgetWindow? _miniWidget;
 
     private readonly ObservableCollection<SeasonEventRow> _seasonRows = new();
     private readonly ObservableCollection<RaceHistoryRow> _historyRows = new();
+    private readonly ObservableCollection<ToastVm> _toasts = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        DarkTitleBarHelper.Apply(this);
+
         SeasonGrid.ItemsSource = _seasonRows;
         HistoryListBox.ItemsSource = _historyRows;
+        RecentHistoryListBox.ItemsSource = _historyRows;
+        ToastList.ItemsSource = _toasts;
 
         var settings = _settingsStore.LoadOrDefault();
         ResultsFolderBox.Text = string.IsNullOrWhiteSpace(settings.ResultsFolder)
@@ -32,10 +41,10 @@ public partial class MainWindow : Window
                ?? @"C:\Program Files (x86)\Steam\steamapps\common\Le Mans Ultimate\UserData\Log\Results")
             : settings.ResultsFolder;
         PlayerNameBox.Text = settings.PlayerName;
-    }
 
-    private static string GetSettingsPath() =>
-        Path.Combine(AppContext.BaseDirectory, "settings.json");
+        if (string.IsNullOrWhiteSpace(settings.PlayerName))
+            NavSettings.IsChecked = true; // ingen tidligere oppsett - start på Innstillinger i stedet for et tomt Dashboard
+    }
 
     private void StartStopButton_Click(object sender, RoutedEventArgs e)
     {
@@ -68,9 +77,8 @@ public partial class MainWindow : Window
 
         try
         {
-            var contentPath = Path.Combine(AppContext.BaseDirectory, "Content", "game-content.json");
-            var careerPath = Path.Combine(AppContext.BaseDirectory, $"career_{Sanitize(playerName)}.json");
-            _engine = new CareerEngine(playerName, careerPath, contentPath);
+            var careerPath = AppPaths.CareerFilePath(playerName);
+            _engine = new CareerEngine(playerName, careerPath, AppPaths.ContentFilePath);
             _engine.SessionIgnored += OnSessionIgnored;
         }
         catch (Exception ex)
@@ -83,6 +91,7 @@ public partial class MainWindow : Window
         RefreshHeader();
         RefreshSeason();
         RefreshHistory();
+        RefreshChampionship();
 
         // Edge case: appen ble kanskje lukket rett etter forrige sesong ble fullført,
         // før du fikk valgt klasse for neste. Be om det nå før vi starter overvåking.
@@ -110,6 +119,9 @@ public partial class MainWindow : Window
         StartStopButton.Content = "Stopp overvåking";
         StatusText.Text = $"Overvåker: {resultsFolder}";
         Log("Venter på nye løpsresultater...");
+        ShowToast("🏁", "Overvåking startet - klar for løp!", "AccentColor");
+
+        NavDashboard.IsChecked = true;
     }
 
     private void StopWatching()
@@ -165,6 +177,8 @@ public partial class MainWindow : Window
             foreach (var issue in outcome.Issues)
                 Log($"⚠ {issue}");
 
+            ShowToast("⚠", "Oppsettet stemte ikke - se loggen for detaljer.", "WarnColor");
+
             if (outcome.CanApproveAnyway)
             {
                 var result = MessageBox.Show(this,
@@ -185,6 +199,7 @@ public partial class MainWindow : Window
         {
             Log($"🏁 {weekend.TrackVenue}: P{race.Position} av {weekend.TotalParticipants} - " +
                 $"+{outcome.XpEarned} XP, +{outcome.PointsEarned} poeng, Rating {outcome.RatingDelta:+0;-0;0}, +{outcome.CreditsEarned} cr");
+            ShowToast("🏁", $"{weekend.TrackVenue}: P{race.Position} - +{outcome.XpEarned} XP", "AccentColor");
         }
 
         HandlePostOutcomeEffects(outcome);
@@ -196,15 +211,20 @@ public partial class MainWindow : Window
             Log($"💰 Kontraktlønn: +{outcome.ContractSalaryEarned} cr");
 
         foreach (var unlocked in outcome.NewUnlocks)
+        {
             Log($"🔓 Ny klasse låst opp: {unlocked}!");
+            ShowToast("🔓", $"Ny klasse låst opp: {unlocked}!", "AccentGold");
+        }
 
         RefreshHeader();
         RefreshSeason();
         RefreshHistory();
+        RefreshChampionship();
 
         if (outcome.SeasonJustCompleted)
         {
             Log($"🏆 Sesong fullført! {outcome.CompletedSeason?.TotalPoints} poeng sammenlagt.");
+            ShowToast("🏆", "Sesong fullført!", "AccentGold");
 
             if (outcome.DroppedByManufacturer)
                 Log("📉 Merket var ikke fornøyd med resultatene og har sagt opp kontrakten din.");
@@ -241,18 +261,27 @@ public partial class MainWindow : Window
                    : $" hos {contract.Manufacturer} ({contract.SeasonsRemaining} sesong(er) igjen, {contract.SalaryPerRound} cr/runde)"));
             RefreshHeader();
             RefreshSeason();
+            RefreshChampionship();
         }
     }
 
-    private void ChampionshipButton_Click(object sender, RoutedEventArgs e)
+    private void Nav_Checked(object sender, RoutedEventArgs e)
     {
-        if (_engine == null)
-        {
-            MessageBox.Show(this, "Start overvåking først.", "Ingen aktiv karriere", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
+        if (DashboardPanel == null) return; // fyres under InitializeComponent før alle paneler finnes
 
-        var window = new ChampionshipWindow(_engine) { Owner = this };
+        DashboardPanel.Visibility = ReferenceEquals(sender, NavDashboard) ? Visibility.Visible : Visibility.Collapsed;
+        SeasonPanel.Visibility = ReferenceEquals(sender, NavSeason) ? Visibility.Visible : Visibility.Collapsed;
+        ChampionshipPanel.Visibility = ReferenceEquals(sender, NavChampionship) ? Visibility.Visible : Visibility.Collapsed;
+        HistoryPanel.Visibility = ReferenceEquals(sender, NavHistory) ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPanel.Visibility = ReferenceEquals(sender, NavSettings) ? Visibility.Visible : Visibility.Collapsed;
+
+        if (ReferenceEquals(sender, NavChampionship)) RefreshChampionship();
+    }
+
+    private void AvatarBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_engine == null) return;
+        var window = new DriverProfileWindow(_engine) { Owner = this };
         window.ShowDialog();
     }
 
@@ -266,11 +295,19 @@ public partial class MainWindow : Window
         Log("📋 Oppskrift for neste løp kopiert til utklippstavlen.");
     }
 
-    private void AvatarBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void MiniWidgetButton_Click(object sender, RoutedEventArgs e)
     {
         if (_engine == null) return;
-        var window = new DriverProfileWindow(_engine) { Owner = this };
-        window.ShowDialog();
+
+        if (_miniWidget != null)
+        {
+            _miniWidget.Close();
+            return;
+        }
+
+        _miniWidget = new MiniWidgetWindow(_engine);
+        _miniWidget.Closed += (_, _) => _miniWidget = null;
+        _miniWidget.Show();
     }
 
     private void RefreshHeader()
@@ -285,7 +322,7 @@ public partial class MainWindow : Window
         ManufacturerText.Text = contract == null
             ? "Merke: -"
             : contract.IsPrivateerSeat
-                ? $"Merke: Privatlag (betalt sete)"
+                ? "Merke: Privatlag (betalt sete)"
                 : contract.IsFreeAgent
                     ? "Merke: Fri kjøring (ingen merke-oppsett i klassen)"
                     : $"Merke: {contract.Manufacturer}   ·   {contract.SeasonsRemaining} sesong(er) igjen   ·   " +
@@ -306,6 +343,7 @@ public partial class MainWindow : Window
             NextRaceTitle.Text = "Venter på valg av klasse...";
             NextRaceDetail.Text = "-";
             CopyRecipeButton.IsEnabled = false;
+            _miniWidget?.Refresh();
             return;
         }
 
@@ -326,25 +364,83 @@ public partial class MainWindow : Window
         {
             CopyRecipeButton.IsEnabled = false;
         }
+
+        _miniWidget?.Refresh();
     }
 
     private void RefreshHistory()
     {
         if (_engine == null) return;
         _historyRows.Clear();
-        foreach (var entry in _engine.Career.RaceHistory.AsEnumerable().Reverse().Take(20))
+        foreach (var entry in _engine.Career.RaceHistory.AsEnumerable().Reverse())
         {
             _historyRows.Add(new RaceHistoryRow(entry));
         }
     }
 
+    private void RefreshChampionship()
+    {
+        if (_engine == null) return;
+        var season = _engine.Career.CurrentSeason;
+
+        if (season == null)
+        {
+            ChampionshipSubTitleText.Text = "Ingen aktiv sesong ennå - velg klasse og signer en kontrakt.";
+            DriverGrid.ItemsSource = null;
+            ManufacturerGrid.ItemsSource = null;
+            return;
+        }
+
+        ChampionshipSubTitleText.Text = $"Sesong {season.SeasonNumber} ({season.CarClass})   ·   " +
+                                         $"{season.CompletedCount} av {season.Events.Count} runder kjørt" +
+                                         (season.LockedRosterNames.Count > 0
+                                             ? $"   ·   Feltet ble låst med {season.LockedRosterNames.Count} sjåfører etter runde 1"
+                                             : "   ·   Feltet låses når runde 1 er fullført");
+
+        var lastRound = season.Events.Where(e => e.Completed).Select(e => e.RoundNumber).DefaultIfEmpty(0).Max();
+        var driverStandings = _engine.GetDriverStandings(season);
+        var previousDriverStandings = lastRound > 1 ? _engine.GetDriverStandings(season, lastRound - 1) : null;
+
+        var driverRows = new List<DriverStandingRowVm>();
+        for (var i = 0; i < driverStandings.Count; i++)
+        {
+            var entry = driverStandings[i];
+            int? previousPosition = null;
+            if (previousDriverStandings != null)
+            {
+                var idx = previousDriverStandings.FindIndex(e => e.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase));
+                if (idx >= 0) previousPosition = idx + 1;
+            }
+            driverRows.Add(new DriverStandingRowVm(i + 1, entry, previousPosition, _engine.Career.DriverName));
+        }
+        DriverGrid.ItemsSource = driverRows;
+
+        var makeStandings = _engine.GetManufacturerStandings(season);
+        ManufacturerGrid.ItemsSource = makeStandings.Select((entry, i) => new ManufacturerStandingRowVm(i + 1, entry)).ToList();
+    }
+
     private void HistoryListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (HistoryListBox.SelectedItem is RaceHistoryRow row)
+        if (sender is ListBox { SelectedItem: RaceHistoryRow row })
         {
             var detailWindow = new RaceDetailWindow(row.Entry) { Owner = this };
             detailWindow.ShowDialog();
         }
+    }
+
+    private void ShowToast(string icon, string message, string accentBrushKey)
+    {
+        var brush = (Brush)FindResource(accentBrushKey);
+        var toast = new ToastVm(icon, message, brush);
+        _toasts.Add(toast);
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            _toasts.Remove(toast);
+        };
+        timer.Start();
     }
 
     private void Log(string message)
@@ -352,7 +448,4 @@ public partial class MainWindow : Window
         LogListBox.Items.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {message}");
         while (LogListBox.Items.Count > 200) LogListBox.Items.RemoveAt(LogListBox.Items.Count - 1);
     }
-
-    private static string Sanitize(string name) =>
-        string.Concat(name.Split(Path.GetInvalidFileNameChars())).Replace(' ', '_');
 }

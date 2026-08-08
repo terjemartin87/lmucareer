@@ -8,6 +8,7 @@ public partial class DriverProfileWindow : Window
     public DriverProfileWindow(CareerEngine engine)
     {
         InitializeComponent();
+        DarkTitleBarHelper.Apply(this);
 
         var career = engine.Career;
         AvatarBrush.ImageSource = AvatarImageCache.GetForDriver(career.DriverName, career.DriverName, decodePixelWidth: 400);

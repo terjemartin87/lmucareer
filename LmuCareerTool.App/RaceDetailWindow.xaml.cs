@@ -8,6 +8,7 @@ public partial class RaceDetailWindow : Window
     public RaceDetailWindow(CareerRaceEntry entry)
     {
         InitializeComponent();
+        DarkTitleBarHelper.Apply(this);
 
         TrackText.Text = entry.TrackVenue;
         var roundText = entry.RoundNumber.HasValue ? $"Runde {entry.RoundNumber} - " : "";

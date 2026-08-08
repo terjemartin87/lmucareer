@@ -19,27 +19,27 @@
             <TextBlock x:Name="SubText" Text="-" Foreground="{StaticResource MutedTextColor}" Margin="0,4,0,0" />
         </StackPanel>
 
-        <Border Grid.Row="1" Background="{StaticResource PanelColor}" CornerRadius="10" Padding="16" Margin="0,0,0,12">
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Text="PRACTICE" FontFamily="Segoe UI Semibold" Foreground="{StaticResource MutedTextColor}" FontSize="12" Margin="0,0,0,8" />
                 <TextBlock x:Name="PracticeText" Text="-" FontFamily="Consolas" FontSize="14" />
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" Background="{StaticResource PanelColor}" CornerRadius="10" Padding="16" Margin="0,0,0,12">
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Text="QUALIFYING" FontFamily="Segoe UI Semibold" Foreground="{StaticResource MutedTextColor}" FontSize="12" Margin="0,0,0,8" />
                 <TextBlock x:Name="QualifyingText" Text="-" FontFamily="Consolas" FontSize="14" />
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="3" Background="{StaticResource PanelColor}" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+        <Border Grid.Row="3" Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,16">
             <StackPanel>
                 <TextBlock Text="RACE" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentColor}" FontSize="12" Margin="0,0,0,8" />
                 <TextBlock x:Name="RaceText" Text="-" FontFamily="Consolas" FontSize="14" />
             </StackPanel>
         </Border>
 
-        <Button Grid.Row="4" Content="Lukk" HorizontalAlignment="Right" Padding="20,10" Click="CloseButton_Click" />
+        <Button Grid.Row="4" Content="Lukk" HorizontalAlignment="Right" Padding="20,10" Style="{StaticResource SecondaryButtonStyle}" Click="CloseButton_Click" />
     </Grid>
 </Window>

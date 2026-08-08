@@ -8,7 +8,7 @@
         ResizeMode="CanResizeWithGrip">
     <DockPanel Margin="24" LastChildFill="True">
 
-        <Button DockPanel.Dock="Bottom" Content="Lukk" HorizontalAlignment="Right" Margin="0,16,0,0"
+        <Button DockPanel.Dock="Bottom" Content="Lukk" HorizontalAlignment="Right" Margin="0,16,0,0" Style="{StaticResource SecondaryButtonStyle}"
                 Padding="20,10" Click="CloseButton_Click" />
 
         <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

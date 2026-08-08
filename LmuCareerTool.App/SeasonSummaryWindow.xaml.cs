@@ -14,6 +14,7 @@ public partial class SeasonSummaryWindow : Window
         bool droppedByManufacturer = false, bool contractExpired = false)
     {
         InitializeComponent();
+        DarkTitleBarHelper.Apply(this);
         _engine = engine;
 
         if (completedSeason != null)

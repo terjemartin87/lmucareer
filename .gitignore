@@ -2,6 +2,11 @@
 bin/
 obj/
 *.user
+publish/
+publish-test/
+
+## Installer output
+Installer/Output/
 
 ## Rider/VS
 .vs/
@@ -11,6 +16,8 @@ obj/
 ## Runtime data that shouldn't be committed
 **/settings.json
 **/career_*.json
+**/pending_*.json
+**/report_test.html
 
 ## OS
 .DS_Store

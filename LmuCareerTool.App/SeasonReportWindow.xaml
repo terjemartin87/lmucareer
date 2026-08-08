@@ -10,9 +10,9 @@
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Lagre som bilde" Padding="14,10" Margin="0,0,8,0"
-                    Background="{StaticResource PanelHoverColor}" Click="SaveImageButton_Click" />
+                    Style="{StaticResource SecondaryButtonStyle}" Click="SaveImageButton_Click" />
             <Button Content="Lagre som HTML" Padding="14,10" Margin="0,0,8,0"
-                    Background="{StaticResource PanelHoverColor}" Click="SaveHtmlButton_Click" />
+                    Style="{StaticResource SecondaryButtonStyle}" Click="SaveHtmlButton_Click" />
             <Button x:Name="ContinueButton" Content="Fortsett" Padding="20,10" Click="ContinueButton_Click" />
         </StackPanel>
 
@@ -29,7 +29,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="14,10" Margin="0,0,10,10" MinWidth="110">
+                            <Border Style="{StaticResource CardStyle}" Padding="14,10" Margin="0,0,10,10" MinWidth="110">
                                 <StackPanel>
                                     <TextBlock Text="{Binding Label}" Foreground="{StaticResource MutedTextColor}" FontSize="11" />
                                     <TextBlock Text="{Binding Value}" FontSize="20" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentColor}" Margin="0,2,0,0" />
@@ -39,7 +39,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="14" Margin="0,0,0,16">
+                <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,0,0,16">
                     <TextBlock x:Name="ContractSummaryText" TextWrapping="Wrap" />
                 </Border>
 
@@ -60,7 +60,7 @@
                 </StackPanel>
 
                 <TextBlock Text="RUNDE FOR RUNDE" FontFamily="Segoe UI Semibold" FontSize="14" Margin="0,0,0,10" />
-                <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="10" Margin="0,0,0,16" MaxHeight="220">
+                <Border Style="{StaticResource CardStyle}" Padding="10" Margin="0,0,0,16" MaxHeight="220">
                     <DataGrid x:Name="RoundsGrid" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Runde" Binding="{Binding Round}" Width="55" />
@@ -81,7 +81,7 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="FØRERMESTERSKAP" FontFamily="Segoe UI Semibold" FontSize="14" Margin="0,0,0,10" />
-                        <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="10" MaxHeight="260">
+                        <Border Style="{StaticResource CardStyle}" Padding="10" MaxHeight="260">
                             <DataGrid x:Name="DriverGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="" Width="32">
@@ -106,7 +106,7 @@
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="MERKEMESTERSKAP" FontFamily="Segoe UI Semibold" FontSize="14" Margin="0,0,0,10" />
-                        <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="10" MaxHeight="260">
+                        <Border Style="{StaticResource CardStyle}" Padding="10" MaxHeight="260">
                             <DataGrid x:Name="ManufacturerGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="26" />
@@ -120,7 +120,7 @@
 
                 <StackPanel x:Name="TrackRecordsSection">
                     <TextBlock Text="PERSONLIGE REKORDER" FontFamily="Segoe UI Semibold" FontSize="14" Margin="0,0,0,10" />
-                    <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="10" MaxHeight="200">
+                    <Border Style="{StaticResource CardStyle}" Padding="10" MaxHeight="200">
                         <DataGrid x:Name="TrackRecordsGrid" AutoGenerateColumns="False" IsReadOnly="True">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Bane" Binding="{Binding Track}" Width="*" />
