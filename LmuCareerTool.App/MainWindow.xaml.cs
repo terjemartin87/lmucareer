@@ -266,10 +266,18 @@ public partial class MainWindow : Window
         Log("📋 Oppskrift for neste løp kopiert til utklippstavlen.");
     }
 
+    private void AvatarBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_engine == null) return;
+        var window = new DriverProfileWindow(_engine) { Owner = this };
+        window.ShowDialog();
+    }
+
     private void RefreshHeader()
     {
         if (_engine == null) return;
         var career = _engine.Career;
+        AvatarBrush.ImageSource = AvatarImageCache.GetForDriver(career.DriverName, career.DriverName);
         DriverNameText.Text = $"Fører: {career.DriverName}";
         ClassText.Text = $"Klasse: {career.CurrentClass}   ·   Opplåst: {string.Join(", ", career.UnlockedClasses)}";
 

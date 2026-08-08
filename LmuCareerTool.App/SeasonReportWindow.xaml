@@ -84,6 +84,17 @@
                         <Border Background="{StaticResource PanelColor}" CornerRadius="10" Padding="10" MaxHeight="260">
                             <DataGrid x:Name="DriverGrid" AutoGenerateColumns="False" IsReadOnly="True">
                                 <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="" Width="32">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Ellipse Width="24" Height="24" Margin="2">
+                                                    <Ellipse.Fill>
+                                                        <ImageBrush ImageSource="{Binding Avatar}" Stretch="UniformToFill" />
+                                                    </Ellipse.Fill>
+                                                </Ellipse>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="26" />
                                     <DataGridTextColumn Header="Fører" Binding="{Binding Name}" Width="*" />
                                     <DataGridTextColumn Header="Poeng" Binding="{Binding Points}" Width="50" />

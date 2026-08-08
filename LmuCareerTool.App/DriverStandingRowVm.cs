@@ -1,10 +1,11 @@
+using System.Windows.Media.Imaging;
 using LmuCareerTool.Models;
 
 namespace LmuCareerTool.App;
 
 public class DriverStandingRowVm
 {
-    public DriverStandingRowVm(int position, DriverStandingEntry entry, int? previousPosition)
+    public DriverStandingRowVm(int position, DriverStandingEntry entry, int? previousPosition, string playerName)
     {
         Position = position;
         Trend = previousPosition == null ? "•"
@@ -20,6 +21,7 @@ public class DriverStandingRowVm
         Podiums = entry.Podiums;
         Rounds = entry.RoundsCompleted;
         IsPlayer = entry.IsPlayer;
+        Avatar = AvatarImageCache.GetForDriver(entry.Name, playerName, decodePixelWidth: 60);
     }
 
     public int Position { get; }
@@ -32,6 +34,7 @@ public class DriverStandingRowVm
     public int Podiums { get; }
     public int Rounds { get; }
     public bool IsPlayer { get; }
+    public BitmapImage Avatar { get; }
 }
 
 public class ManufacturerStandingRowVm

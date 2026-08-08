@@ -18,10 +18,23 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Vertical">
-                    <TextBlock x:Name="DriverNameText" Text="Fører: -" FontSize="22" FontFamily="Segoe UI Semibold" />
-                    <TextBlock x:Name="ClassText" Text="Klasse: -" Foreground="{StaticResource MutedTextColor}" Margin="0,4,0,0" />
-                    <TextBlock x:Name="ManufacturerText" Text="Merke: -" Foreground="{StaticResource MutedTextColor}" Margin="0,2,0,0" />
+                <StackPanel Orientation="Horizontal">
+                    <Border x:Name="AvatarBorder" Width="64" Height="64" Margin="0,0,14,0" Cursor="Hand"
+                            MouseLeftButtonUp="AvatarBorder_MouseLeftButtonUp" ToolTip="Se førerprofil">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.4" Color="Black" />
+                        </Border.Effect>
+                        <Ellipse Width="64" Height="64" Stroke="{StaticResource AccentColor}" StrokeThickness="1.5">
+                            <Ellipse.Fill>
+                                <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
+                            </Ellipse.Fill>
+                        </Ellipse>
+                    </Border>
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <TextBlock x:Name="DriverNameText" Text="Fører: -" FontSize="22" FontFamily="Segoe UI Semibold" />
+                        <TextBlock x:Name="ClassText" Text="Klasse: -" Foreground="{StaticResource MutedTextColor}" Margin="0,4,0,0" />
+                        <TextBlock x:Name="ManufacturerText" Text="Merke: -" Foreground="{StaticResource MutedTextColor}" Margin="0,2,0,0" />
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel Margin="0,0,24,0">

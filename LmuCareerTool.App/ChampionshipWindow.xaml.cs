@@ -40,7 +40,7 @@ public partial class ChampionshipWindow : Window
                 if (idx >= 0) previousPosition = idx + 1;
             }
 
-            driverRows.Add(new DriverStandingRowVm(i + 1, entry, previousPosition));
+            driverRows.Add(new DriverStandingRowVm(i + 1, entry, previousPosition, engine.Career.DriverName));
         }
         DriverGrid.ItemsSource = driverRows;
 

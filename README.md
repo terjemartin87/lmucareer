@@ -36,12 +36,12 @@ mesterskapstabell, rating, credits og kontrakter.
 | Mesterskapstabell mot faste rivaler | ✅ Fører- og merkemesterskap, fastlåst startfelt (Fase 2) |
 | Transfer-marked / kontrakter | ✅ Interesse-baserte tilbud, lønn, sesongmål, oppsigelse (Fase 3) |
 | Sesongavslutning med oppsummering | ✅ Full rapport, priser, personlige rekorder, PNG/HTML-eksport (Fase 4) |
-| Fører-profil / 3D | ❌ Finnes ikke - Fase 5 |
+| Fører-portretter | ✅ Portrett-system med faste bilder for deg og alle AI-motstandere (Fase 5, omfang endret fra 3D) |
 | Installer | ❌ Finnes ikke - Fase 7 |
 | Tester | ❌ Finnes ikke - Fase 8 |
 
-Fase 0, 1, 2, 3 og 4 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og hva
-som bevisst ble utelatt eller forenklet fra den opprinnelige planen.
+Fase 0, 1, 2, 3, 4 og 5 er gjennomført. Se avsnittene under for hva som faktisk ble bygget, og
+hva som bevisst ble utelatt eller forenklet fra den opprinnelige planen.
 
 ---
 
@@ -153,7 +153,7 @@ igjen i kalenderen, eller du kjører runde 5 før runde 3, blir feil runde kredi
 ## Arkitektur og filstruktur
 
 Målbildet etter alle fasene. `[N]` viser hvilken fase filen kommer inn i; filer uten markør
-finnes allerede. **`[0]`-`[4]` er nå bygget** (bortsett fra `Directory.Build.props`,
+finnes allerede. **`[0]`-`[5]` er nå bygget** (bortsett fra `Directory.Build.props`,
 `Views/`/`ViewModels/`-flyttingen, `AiResultSynthesizer.cs`, `TransferWindow.cs` og
 `Views/GarageWindow.xaml` - se avvik under hver fase).
 
@@ -164,13 +164,15 @@ LmuCareerTool/
 ├── Directory.Build.props                      [0]  felles versjon/nullable/langversion
 │
 ├── LmuCareerTool.Core/                        all logikk, ingen UI-avhengigheter
+│   ├── images/Drivers/                        [5]  47 sjåførportretter + myself.png (kopieres til App/Console)
 │   ├── Content/
 │   │   ├── game-content.json                       biler, merker, baner, vær
 │   │   ├── entry-list.json                    [2]  LMUs AI-førerstall (navn + team + bil)
 │   │   ├── points-systems.json                [4]  valgbare poengskalaer (WEC/F1/egen)
 │   │   ├── GameContent.cs
 │   │   ├── ContentLoader.cs
-│   │   └── ContentValidator.cs                [1]  sjekker content mot ekte resultatfiler
+│   │   ├── ContentValidator.cs                [1]  sjekker content mot ekte resultatfiler
+│   │   └── DriverAvatarResolver.cs            [5]  navn → portrett, stabil hash
 │   │
 │   ├── Models/
 │   │   ├── SessionResult.cs
@@ -189,7 +191,7 @@ LmuCareerTool/
 │   ├── Season/
 │   │   ├── SeasonModel.cs
 │   │   ├── SeasonGenerator.cs
-│   │   ├── CalendarBuilder.cs                 [1]  unike baner, sesongtema, kalenderregler
+│   │   ├── CalendarBuilder.cs                 [4]  jevnere banefordeling enn modulo-mønsteret
 │   │   └── SeasonRules.cs                     [1]  antall runder, endurance-andel, feltstørrelse
 │   │
 │   ├── Championship/                          [2]
@@ -233,27 +235,21 @@ LmuCareerTool/
 │   │   ├── Colors.xaml                             farger og pensler
 │   │   ├── Controls.xaml                           ComboBox, RadioButton, DataGrid, Button
 │   │   └── Typography.xaml
-│   ├── Views/                                 [0]  (flyttes hit fra rotmappa)
+│   ├── Views/                                 [0]  (flyttes hit fra rotmappa - ikke gjort ennå)
 │   │   ├── MainWindow.xaml
-│   │   ├── SeasonSummaryWindow.xaml
+│   │   ├── SeasonSummaryWindow.xaml            garasje/kontraktstilbud - ingen egen GarageWindow (se Fase 3-avvik)
 │   │   ├── RaceDetailWindow.xaml
-│   │   ├── GarageWindow.xaml                  [3]  kontrakter og tilbud, eget vindu
-│   │   ├── ChampionshipView.xaml              [2]  tabell som egen fane
-│   │   ├── DriverProfileWindow.xaml           [5]  fører-kort med 3D-hjelm
+│   │   ├── ChampionshipWindow.xaml            [2]  mesterskapstabell, eget vindu (ikke fane ennå)
+│   │   ├── SeasonReportWindow.xaml            [4]  full sesongrapport
+│   │   ├── DriverProfileWindow.xaml           [5]  portrett + karrierestatistikk
 │   │   └── FirstRunWizard.xaml                [7]  førstegangsoppsett
-│   ├── ViewModels/                            [0]
-│   │   ├── ViewModelBase.cs                        INotifyPropertyChanged
-│   │   ├── MainViewModel.cs
+│   ├── ViewModels/                            [0]  (flyttes hit fra rotmappa - ikke gjort ennå)
 │   │   ├── SeasonEventRow.cs
-│   │   ├── ManufacturerRowVm.cs
-│   │   ├── StandingRowVm.cs                   [2]
-│   │   └── OfferRowVm.cs                      [3]
-│   ├── Controls/                              [5]
-│   │   ├── DriverAvatar.xaml                       rundt bilde + 3D-ikon
-│   │   └── HelmetViewport.xaml                     Viewport3D med roterbar hjelm
-│   └── Assets/                                [5]
-│       ├── helmet.obj
-│       └── flags/
+│   │   ├── ContractOfferRowVm.cs              [3]
+│   │   ├── DriverStandingRowVm.cs             [2]  har nå en Avatar-property (Fase 5)
+│   │   └── SeasonReportRowVms.cs              [4]
+│   ├── AvatarImageCache.cs                    [5]  cacher BitmapImage per portrettfil
+│   └── images/Drivers/*.png                   [5]  47 sjåførportretter + myself.png (i Core, kopieres hit)
 │
 ├── LmuCareerTool.Console/                     testverktøy (replay, season, validate)
 │
@@ -470,14 +466,50 @@ og gjenbruk av forrige sesongs siste bane i samme testkjøring. PNG-eksporten (`
 er kun kodegjennomgått - samme begrensning som resten av UI-en: ingen desktop-GUI-automatisering
 tilgjengelig for å faktisk klikke knappen og se bildet.
 
-### Fase 5 – Fører-profil og 3D 🟢
+### Fase 5 – Fører-portretter ✅ Ferdig (omfang endret - se avvik)
 
-* `DriverProfile`: navn, nasjonalitet (flagg), fast startnummer, valgt bilde, hjelmfarger.
-* `DriverAvatar`-kontroll i headeren: rundt bilde + et lite **3D-ikon** ved siden av navnet.
-* Klikk på 3D-ikonet åpner `DriverProfileWindow` med en `Viewport3D`
-  (**HelixToolkit.Wpf** via NuGet) som viser en roterbar hjelm-modell teksturert med
-  hjelmfargene dine. Du kan dra for å rotere, og laste opp et eget bilde til visiret/profilen.
-* Samme vindu viser karrierestatistikk på tvers av alle sesonger.
+Planen så for seg en roterbar 3D-hjelm i en `Viewport3D` (HelixToolkit). Det datagrunnlaget
+finnes ikke - `LmuCareerTool.Core/images/Drivers/` inneholder 48 ferdig-genererte
+**2D-portretter** (47 generiske sjåførbilder + `myself.png`, ditt eget), ikke 3D-geometri
+(`.obj`/`.fbx`). Fase 5 er derfor bygget om til et portrett-system i stedet for en falsk
+"3D-knapp" som ikke faktisk roterer noe:
+
+* `images\Drivers\*.png` kopieres nå til build-output via `Content`-item i
+  `LmuCareerTool.Core.csproj` (samme mekanisme som `game-content.json`), så både App og Console
+  får dem automatisk.
+* `Content/DriverAvatarResolver.cs`: knytter et førernavn til et portrettfilnavn.
+  **Deterministisk** - en stabil FNV-1a-hash av navnet (ikke `string.GetHashCode()`, som er
+  randomisert per prosess i .NET og derfor IKKE stabil på tvers av kjøringer) velger
+  `driver1.png`-`driver47.png`. Samme sjåfør får alltid samme portrett, uten at noe må lagres.
+  `"Terje Hognestad"` (normalisert likt spillerens visningsnavn) går alltid til `myself.png`,
+  uansett hvor navnet dukker opp - header, mesterskapstabell, sesongrapport.
+* `AvatarImageCache.cs` (App): laster og cacher `BitmapImage`-instanser med
+  `DecodePixelWidth` tilpasset bruksstedet (60px i tabellrader, 400px i profilvinduet), så
+  appen ikke dekoder samme PNG på nytt for hver rad.
+* **Header i `MainWindow`**: et rundt portrett ved siden av førernavnet, med skygge-effekt for
+  litt dybde. Klikkbart - åpner `DriverProfileWindow`.
+* **`DriverProfileWindow`**: stort portrett + karrierestatistikk på tvers av ALLE sesonger
+  (nivå, XP, Rating, credits, sesonger spilt, løp, seire, podier, beste resultat, totale
+  poeng, kjørt distanse, opplåste klasser).
+* **Mesterskapstabell og sesongrapport**: `ChampionshipWindow` og `SeasonReportWindow` sine
+  førertabeller har nå en portrett-kolonne - hver AI-motstander vises med sitt faste bilde ved
+  siden av navnet, ikke bare deg selv.
+
+**Verifisert:** hash-mappingen ble testet mot 28 ekte førernavn fra Daytona-startlisten
+(inkl. tre med `#id`-suffiks) - `"Terje Hognestad"` traff `myself.png` som forventet, en
+sjåfør med varierende `#id`-suffiks mellom runder matchet fortsatt samme portrett (siden
+suffikset normaliseres bort før hashing, samme logikk som `RosterMatcher` fra Fase 2), 24 av
+47 tilgjengelige portretter ble brukt (rimelig spredning, noen kollisjoner er forventet og
+uproblematisk), og alle filene ble bekreftet kopiert til App sin faktiske build-output.
+Appen ble startet og kjørte uten å krasje under bildelasting. Selve det visuelle resultatet
+(cirkel-beskjæring, skygge, layout) er kun kodegjennomgått - samme UI-testbegrensning som
+resten av appen.
+
+**Avvik fra opprinnelig plan:** ingen `DriverProfile`-modell med nasjonalitet/flagg/hjelmfarger
+- disse feltene ga ikke mening uten faktisk hjelm-geometri å style. Ingen mulighet for å laste
+opp egne bilder for AI-motstandere (portrettene er faste, ferdig-genererte filer). Ekte 3D
+(rotering, dra-for-å-se-fra-andre-vinkler) er utsatt til det evt. finnes ekte 3D-modeller å
+vise - å bygge en `Viewport3D` rundt et flatt bilde ville bare vært et falskt "3D"-ikon.
 
 ### Fase 6 – UX-oppussing 🟢
 

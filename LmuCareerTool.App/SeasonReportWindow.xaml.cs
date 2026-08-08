@@ -47,7 +47,7 @@ public partial class SeasonReportWindow : Window
         RoundsGrid.ItemsSource = report.Rounds.Select(r => new RoundReportRowVm(r)).ToList();
 
         DriverGrid.ItemsSource = report.DriverStandings
-            .Select((d, i) => new DriverStandingRowVm(i + 1, d, previousPosition: null))
+            .Select((d, i) => new DriverStandingRowVm(i + 1, d, previousPosition: null, driverName))
             .ToList();
 
         ManufacturerGrid.ItemsSource = report.ManufacturerStandings
