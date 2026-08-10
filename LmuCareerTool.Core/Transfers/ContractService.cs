@@ -28,8 +28,7 @@ public static class ContractService
             Car = offer.Car,
             SeasonsRemaining = offer.LengthSeasons,
             SalaryPerRound = offer.SalaryPerRound,
-            GoalTargetPosition = offer.GoalTargetPosition,
-            GoalDescription = offer.GoalDescription,
+            Goals = offer.Goals,
             SignedInSeasonNumber = seasonNumber,
             IsPrivateerSeat = offer.IsPrivateerSeat,
             IsFreeAgent = offer.IsFreeAgent,
@@ -51,14 +50,19 @@ public static class ContractService
         return salary;
     }
 
-    /// <summary>Bruddsum for å si opp kontrakten før tiden - dyrere jo flere sesonger som gjenstår.</summary>
-    public static int CalculateBreakFee(Contract contract) => Math.Max(contract.SeasonsRemaining, 1) * 1500;
+    /// <summary>Bruddsum for å si opp kontrakten før tiden - dyrere jo flere sesonger som gjenstår.
+    /// En manager forhandler bruddsummen ned med 25%.</summary>
+    public static int CalculateBreakFee(Contract contract, bool hasManager = false)
+    {
+        var fee = Math.Max(contract.SeasonsRemaining, 1) * 1500;
+        return hasManager ? (int)Math.Round(fee * 0.75) : fee;
+    }
 
     public static bool TryTerminateEarly(CareerProfile career)
     {
         if (career.CurrentContract is not { IsPrivateerSeat: false, IsFreeAgent: false } contract) return false;
 
-        var fee = CalculateBreakFee(contract);
+        var fee = CalculateBreakFee(contract, career.HasManager);
         if (career.Credits < fee) return false;
 
         career.Credits -= fee;
@@ -79,7 +83,7 @@ public static class ContractService
 
         contract.SeasonsRemaining = Math.Max(0, contract.SeasonsRemaining - 1);
 
-        var goalMet = OfferGenerator.WasGoalMet(contract, completedSeason, playerName);
+        var goalMet = OfferGenerator.WasGoalMet(career, contract, completedSeason, playerName);
         var droppedForMissedGoal = !goalMet && !contract.IsPrivateerSeat && !contract.IsFreeAgent;
 
         if (contract.SeasonsRemaining <= 0 || droppedForMissedGoal)

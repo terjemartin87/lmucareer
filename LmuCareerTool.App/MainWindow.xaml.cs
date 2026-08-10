@@ -8,6 +8,7 @@ using LmuCareerTool.App.Localization;
 using LmuCareerTool.Settings;
 using LmuCareerTool.Career;
 using LmuCareerTool.Models;
+using LmuCareerTool.Transfers;
 using LmuCareerTool.Validation;
 using LmuCareerTool.Watching;
 
@@ -156,6 +157,7 @@ public partial class MainWindow : Window
             try { _engine.IndexExistingFile(file); }
             catch { /* ignorer filer som ikke er sesjonsresultater */ }
         }
+        RefreshPendingSessions();
 
         _watcher = new ResultsWatcher(resultsFolder);
         _watcher.NewResultFile += OnNewResultFile;
@@ -202,6 +204,7 @@ public partial class MainWindow : Window
             {
                 var outcome = _engine!.ProcessFile(path);
                 if (outcome != null) HandleOutcome(outcome);
+                else RefreshPendingSessions();
             }
             catch (Exception ex)
             {
@@ -221,6 +224,15 @@ public partial class MainWindow : Window
 
         var race = weekend.RaceResult;
 
+        if (outcome.CompletedSpecialEventName != null)
+        {
+            Log($"🏆 {outcome.CompletedSpecialEventName} fullført: P{race.Position} av {weekend.TotalParticipants} - " +
+                $"+{outcome.XpEarned} XP, Driver {FormatDelta(outcome.RatingDelta)}, Safety {FormatDelta(outcome.SafetyRatingDelta)}, +{outcome.CreditsEarned} cr");
+            ShowToast("🏆", $"{outcome.CompletedSpecialEventName} fullført! P{race.Position}", "AccentGold");
+            HandlePostOutcomeEffects(outcome);
+            return;
+        }
+
         if (outcome.Issues.Count > 0)
         {
             foreach (var issue in outcome.Issues)
@@ -238,7 +250,7 @@ public partial class MainWindow : Window
                 {
                     var approved = _engine!.ApproveDespiteMismatch(outcome);
                     Log(string.Format(Strings.T("Main_Log_ApprovedManually"), weekend.TrackVenue, approved.XpEarned, approved.PointsEarned,
-                        FormatDelta(approved.RatingDelta), approved.CreditsEarned));
+                        FormatDelta(approved.RatingDelta), FormatDelta(approved.SafetyRatingDelta), approved.CreditsEarned));
                     HandlePostOutcomeEffects(approved);
                     return;
                 }
@@ -247,7 +259,7 @@ public partial class MainWindow : Window
         else
         {
             Log(string.Format(Strings.T("Main_Log_RaceResult"), weekend.TrackVenue, race.Position, weekend.TotalParticipants,
-                outcome.XpEarned, outcome.PointsEarned, FormatDelta(outcome.RatingDelta), outcome.CreditsEarned));
+                outcome.XpEarned, outcome.PointsEarned, FormatDelta(outcome.RatingDelta), FormatDelta(outcome.SafetyRatingDelta), outcome.CreditsEarned));
             ShowToast("🏁", string.Format(Strings.T("Main_Toast_RaceResult"), weekend.TrackVenue, race.Position, outcome.XpEarned), "AccentColor");
         }
 
@@ -265,6 +277,12 @@ public partial class MainWindow : Window
         {
             Log(string.Format(Strings.T("Main_Log_ClassUnlocked"), unlocked));
             ShowToast("🔓", string.Format(Strings.T("Main_Toast_ClassUnlocked"), unlocked), "AccentGold");
+        }
+
+        foreach (var achievement in outcome.NewAchievements)
+        {
+            Log(string.Format(Strings.T("Main_Log_AchievementUnlocked"), achievement.Name));
+            ShowToast(achievement.Icon, string.Format(Strings.T("Main_Toast_AchievementUnlocked"), achievement.Name), "AccentGold");
         }
 
         RefreshHeader();
@@ -323,7 +341,6 @@ public partial class MainWindow : Window
         SeasonPanel.Visibility = ReferenceEquals(sender, NavSeason) ? Visibility.Visible : Visibility.Collapsed;
         ChampionshipPanel.Visibility = ReferenceEquals(sender, NavChampionship) ? Visibility.Visible : Visibility.Collapsed;
         HistoryPanel.Visibility = ReferenceEquals(sender, NavHistory) ? Visibility.Visible : Visibility.Collapsed;
-        HelpPanel.Visibility = ReferenceEquals(sender, NavHelp) ? Visibility.Visible : Visibility.Collapsed;
         SettingsPanel.Visibility = ReferenceEquals(sender, NavSettings) ? Visibility.Visible : Visibility.Collapsed;
 
         if (ReferenceEquals(sender, NavChampionship)) RefreshChampionship();
@@ -331,7 +348,7 @@ public partial class MainWindow : Window
 
     private void HelpLink_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        NavHelp.IsChecked = true;
+        NavSettings.IsChecked = true;
     }
 
     private void CheckInterestButton_Click(object sender, RoutedEventArgs e)
@@ -344,6 +361,56 @@ public partial class MainWindow : Window
 
         var window = new ManufacturerInterestWindow(_engine) { Owner = this };
         window.ShowDialog();
+    }
+
+    private void TransferMarketButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, Strings.T("Main_Msg_NoActiveCareer"), Strings.T("Main_Msg_NoActiveCareerTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new TransferMarketWindow(_engine) { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void AchievementsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, Strings.T("Main_Msg_NoActiveCareer"), Strings.T("Main_Msg_NoActiveCareerTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new AchievementsWindow(_engine) { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void ShopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, Strings.T("Main_Msg_NoActiveCareer"), Strings.T("Main_Msg_NoActiveCareerTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new ShopWindow(_engine) { Owner = this };
+        window.ShowDialog();
+        RefreshHeader();
+    }
+
+    private void EventsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null)
+        {
+            MessageBox.Show(this, Strings.T("Main_Msg_NoActiveCareer"), Strings.T("Main_Msg_NoActiveCareerTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new EventsWindow(_engine) { Owner = this };
+        window.ShowDialog();
+        RefreshHeader();
     }
 
     private void AvatarBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -394,11 +461,12 @@ public partial class MainWindow : Window
                 : contract.IsFreeAgent
                     ? Strings.T("Main_Header_MakeFreeAgent")
                     : string.Format(Strings.T("Main_Header_MakeContract"), contract.Manufacturer, contract.SeasonsRemaining,
-                        contract.SalaryPerRound, contract.GoalDescription);
+                        contract.SalaryPerRound, ContractGoalFormatter.Describe(contract.Goals));
         LevelText.Text = career.Level.ToString();
         XpText.Text = career.TotalXp.ToString();
         SeasonPointsText.Text = (career.CurrentSeason?.TotalPoints ?? 0).ToString();
         RatingText.Text = career.DriverRating.ToString();
+        SafetyRatingText.Text = career.SafetyRating.ToString();
         CreditsText.Text = $"{career.Credits} cr";
     }
 
@@ -444,6 +512,29 @@ public partial class MainWindow : Window
         {
             _historyRows.Add(new RaceHistoryRow(entry));
         }
+
+        RefreshPendingSessions();
+    }
+
+    private void RefreshPendingSessions()
+    {
+        if (_engine == null) return;
+
+        var rows = _engine.GetPendingSessions()
+            .GroupBy(s => s.TrackVenue)
+            .Select(g => new PendingSessionRowVm(g.Key, g.ToList()))
+            .ToList();
+
+        PendingSessionsCard.Visibility = rows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        PendingSessionsList.ItemsSource = rows;
+    }
+
+    private void ClearPendingButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_engine == null || sender is not Button { Tag: PendingSessionRowVm row }) return;
+
+        _engine.ClearPendingSession(row.TrackVenue);
+        RefreshPendingSessions();
     }
 
     private void RefreshChampionship()
@@ -456,6 +547,7 @@ public partial class MainWindow : Window
             ChampionshipSubTitleText.Text = Strings.T("Main_ChampionshipNoSeason");
             DriverGrid.ItemsSource = null;
             ManufacturerGrid.ItemsSource = null;
+            RivalCard.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -487,14 +579,41 @@ public partial class MainWindow : Window
 
         var makeStandings = _engine.GetManufacturerStandings(season);
         ManufacturerGrid.ItemsSource = makeStandings.Select((entry, i) => new ManufacturerStandingRowVm(i + 1, entry)).ToList();
+
+        var rivalComparison = _engine.GetRivalComparison(season);
+        if (rivalComparison == null)
+        {
+            RivalCard.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            var (player, rival) = rivalComparison.Value;
+            var playerPos = driverStandings.FindIndex(s => s.IsPlayer) + 1;
+            var rivalPos = driverStandings.FindIndex(s => ReferenceEquals(s, rival)) + 1;
+            var gap = Math.Abs(player.Points - rival.Points);
+            var chasing = rivalPos < playerPos;
+
+            RivalCard.Visibility = Visibility.Visible;
+            RivalText.Text = chasing
+                ? $"Du jager {rival.Name} (P{rivalPos}) - {gap} poeng bak. De har {rival.Wins} seire og {rival.Podiums} pallplasser mot dine {player.Wins}/{player.Podiums}."
+                : $"{rival.Name} (P{rivalPos}) jager deg - {gap} poeng bak. De har {rival.Wins} seire og {rival.Podiums} pallplasser mot dine {player.Wins}/{player.Podiums}.";
+        }
     }
 
     private void HistoryListBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (sender is ListBox { SelectedItem: RaceHistoryRow row })
+        if (_engine != null && sender is ListBox { SelectedItem: RaceHistoryRow row })
         {
-            var detailWindow = new RaceDetailWindow(row.Entry) { Owner = this };
+            var detailWindow = new RaceDetailWindow(_engine, row.Entry) { Owner = this };
             detailWindow.ShowDialog();
+
+            if (detailWindow.WasDeleted)
+            {
+                RefreshHeader();
+                RefreshSeason();
+                RefreshHistory();
+                RefreshChampionship();
+            }
         }
     }
 

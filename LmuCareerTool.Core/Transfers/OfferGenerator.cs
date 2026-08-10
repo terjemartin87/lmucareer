@@ -11,7 +11,8 @@ namespace LmuCareerTool.Transfers;
 /// </summary>
 public static class OfferGenerator
 {
-    private const int MinInterestForOffer = 50;
+    /// <summary>Terskel for at et merke faktisk sender et tilbud - brukes også av TransferMarketService.</summary>
+    public const int MinInterestForOffer = 50;
     private const int PrivateerSigningCost = 1500;
 
     public static List<ContractOffer> GenerateOffers(
@@ -32,16 +33,12 @@ public static class OfferGenerator
                 CarClass = carClass,
                 InterestScore = 100,
                 LengthSeasons = 1,
-                GoalDescription = "Ingen merke-oppsett i denne klassen ennå - ingen krav.",
+                Goals = new List<ContractGoal>(),
                 Reasoning = "Denne klassen har ikke et fullt kontraktssystem ennå. Du kjører fritt uten fabrikkstøtte.",
                 IsFreeAgent = true,
             });
             return offers;
         }
-
-        var lastSeasonRaces = lastSeason == null
-            ? new List<CareerRaceEntry>()
-            : career.RaceHistory.Where(r => r.SeasonNumber == lastSeason.SeasonNumber).ToList();
 
         foreach (var manufacturer in classDef.Manufacturers)
         {
@@ -50,19 +47,19 @@ public static class OfferGenerator
 
             if (isCurrent)
             {
-                if (WasGoalMet(career.CurrentContract!, lastSeason, playerName))
+                if (WasGoalMet(career, career.CurrentContract!, lastSeason, playerName))
                     offers.Add(BuildRenewalOffer(career.CurrentContract!, manufacturer));
 
                 continue; // enten fornyelse over, eller de er ikke fornøyd - enten vei, ikke også et "nytt" tilbud
             }
 
-            var interest = InterestModel.ComputeInterest(career, manufacturer, lastSeason, lastSeasonRaces);
+            var interest = InterestModel.ComputeInterest(career, manufacturer, lastSeason);
             if (interest < MinInterestForOffer) continue;
 
             offers.Add(BuildNewOffer(manufacturer, carClass, interest));
         }
 
-        offers.Add(BuildPrivateerOffer(classDef, carClass));
+        offers.Add(BuildPrivateerOffer(classDef, carClass, career.HasManager));
 
         return offers
             .OrderByDescending(o => o.IsRenewal)
@@ -71,25 +68,75 @@ public static class OfferGenerator
     }
 
     /// <summary>
-    /// Sjekker om forrige sesongs sesongmål ble innfridd, ved å se hvor du faktisk endte i
-    /// førermesterskapstabellen (Fase 2) den sesongen.
+    /// Sjekker om ALLE krav i kontrakten ble innfridd forrige sesong - posisjon/pallplasser/
+    /// seire fra mesterskapstabellen, Safety Rating fra karrieren slik den står nå (som er
+    /// verdien rett etter sesongens siste løp, siden rating oppdateres per løp underveis).
     /// </summary>
-    public static bool WasGoalMet(Contract contract, SeasonModel? lastSeason, string playerName)
+    public static bool WasGoalMet(CareerProfile career, Contract contract, SeasonModel? lastSeason, string playerName)
     {
-        if (lastSeason == null || contract.GoalTargetPosition <= 0) return true;
+        if (lastSeason == null || contract.Goals.Count == 0) return true;
 
         var standings = ChampionshipTable.ComputeDriverStandings(lastSeason, playerName);
         var playerIndex = standings.FindIndex(s => s.IsPlayer);
         if (playerIndex < 0) return true; // fant deg ikke i tabellen (f.eks. ingen fullførte runder) - ikke straff for det
 
-        return playerIndex + 1 <= contract.GoalTargetPosition;
+        var playerEntry = standings[playerIndex];
+        var playerPosition = playerIndex + 1;
+
+        return contract.Goals.All(goal => goal.Type switch
+        {
+            ContractGoalType.MinChampionshipPosition => playerPosition <= goal.TargetValue,
+            ContractGoalType.MinPodiums => playerEntry.Podiums >= goal.TargetValue,
+            ContractGoalType.MinWins => playerEntry.Wins >= goal.TargetValue,
+            ContractGoalType.MinSafetyRating => career.SafetyRating >= goal.TargetValue,
+            _ => true,
+        });
+    }
+
+    /// <summary>
+    /// Bygger kravene for et tilbud. Prestisjetunge merker (høy RatingRequired) stiller flere
+    /// og strengere krav enn ferske merker - det er her "forskjellige krav per merke" kommer fra.
+    /// </summary>
+    private static List<ContractGoal> BuildGoals(ManufacturerDefinition manufacturer, int interest)
+    {
+        var goals = new List<ContractGoal>();
+
+        var goalPosition = interest >= 80 ? 3 : interest >= 65 ? 5 : 8;
+        goals.Add(new ContractGoal
+        {
+            Type = ContractGoalType.MinChampionshipPosition,
+            TargetValue = goalPosition,
+            Description = $"Topp {goalPosition} sammenlagt i førermesterskapet",
+        });
+
+        if (manufacturer.RatingRequired >= 50)
+        {
+            var minSafety = manufacturer.RatingRequired >= 70 ? 65 : 55;
+            goals.Add(new ContractGoal
+            {
+                Type = ContractGoalType.MinSafetyRating,
+                TargetValue = minSafety,
+                Description = $"Safety Rating på minst {minSafety}",
+            });
+        }
+
+        if (interest >= 80)
+        {
+            goals.Add(new ContractGoal
+            {
+                Type = ContractGoalType.MinPodiums,
+                TargetValue = 1,
+                Description = "Minst 1 pallplass i løpet av sesongen",
+            });
+        }
+
+        return goals;
     }
 
     private static ContractOffer BuildNewOffer(ManufacturerDefinition manufacturer, string carClass, int interest)
     {
         var length = interest >= 80 ? 3 : interest >= 65 ? 2 : 1;
         var salary = 150 + interest * 6;
-        var goalPosition = interest >= 80 ? 3 : interest >= 65 ? 5 : 8;
 
         return new ContractOffer
         {
@@ -99,8 +146,7 @@ public static class OfferGenerator
             InterestScore = interest,
             LengthSeasons = length,
             SalaryPerRound = salary,
-            GoalTargetPosition = goalPosition,
-            GoalDescription = $"Topp {goalPosition} sammenlagt i førermesterskapet",
+            Goals = BuildGoals(manufacturer, interest),
             Reasoning = interest switch
             {
                 >= 85 => "De har fulgt deg tett og vil ha deg som fast fører.",
@@ -112,7 +158,15 @@ public static class OfferGenerator
 
     private static ContractOffer BuildRenewalOffer(Contract current, ManufacturerDefinition manufacturer)
     {
-        var nextGoal = Math.Max(1, current.GoalTargetPosition - 1);
+        // Fornyelse regnes med toppinteresse (100) for kravstrenghet, men posisjonskravet
+        // strammes inn ett hakk fra forrige kontrakt i stedet for å hoppe rett til 3.
+        var goals = BuildGoals(manufacturer, interest: 100);
+        var previousPositionGoal = current.Goals
+            .FirstOrDefault(g => g.Type == ContractGoalType.MinChampionshipPosition)?.TargetValue ?? 8;
+        var nextPositionGoal = Math.Max(1, previousPositionGoal - 1);
+        var positionGoal = goals.First(g => g.Type == ContractGoalType.MinChampionshipPosition);
+        positionGoal.TargetValue = nextPositionGoal;
+        positionGoal.Description = $"Topp {nextPositionGoal} sammenlagt i førermesterskapet";
 
         return new ContractOffer
         {
@@ -122,16 +176,16 @@ public static class OfferGenerator
             InterestScore = 100,
             LengthSeasons = current.SeasonsRemaining > 0 ? current.SeasonsRemaining : 1,
             SalaryPerRound = current.SalaryPerRound + 25,
-            GoalTargetPosition = nextGoal,
-            GoalDescription = $"Topp {nextGoal} sammenlagt i førermesterskapet",
+            Goals = goals,
             Reasoning = "Fornøyd med samarbeidet forrige sesong - de vil fortsette med deg.",
             IsRenewal = true,
         };
     }
 
-    private static ContractOffer BuildPrivateerOffer(ClassDefinition classDef, string carClass)
+    private static ContractOffer BuildPrivateerOffer(ClassDefinition classDef, string carClass, bool hasManager)
     {
         var car = classDef.Manufacturers.FirstOrDefault()?.Cars.FirstOrDefault() ?? classDef.Cars.FirstOrDefault() ?? "";
+        var signingCost = hasManager ? (int)Math.Round(PrivateerSigningCost * 0.75) : PrivateerSigningCost;
 
         return new ContractOffer
         {
@@ -141,11 +195,12 @@ public static class OfferGenerator
             InterestScore = 0,
             LengthSeasons = 1,
             SalaryPerRound = 0,
-            GoalTargetPosition = 0,
-            GoalDescription = "Ingen krav - dette er et betalt sete uten fabrikkstøtte.",
-            Reasoning = "Ingen fabrikkontrakt i sikte? Et privatlag tar deg imot mot betaling.",
+            Goals = new List<ContractGoal>(),
+            Reasoning = hasManager
+                ? "Ingen fabrikkontrakt i sikte? Din manager har forhandlet frem en billigere avtale hos et privatlag."
+                : "Ingen fabrikkontrakt i sikte? Et privatlag tar deg imot mot betaling.",
             IsPrivateerSeat = true,
-            SigningCost = PrivateerSigningCost,
+            SigningCost = signingCost,
         };
     }
 }

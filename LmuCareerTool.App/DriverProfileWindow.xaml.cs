@@ -1,5 +1,6 @@
 using System.Windows;
 using LmuCareerTool.Career;
+using LmuCareerTool.Transfers;
 
 namespace LmuCareerTool.App;
 
@@ -21,7 +22,7 @@ public partial class DriverProfileWindow : Window
                 ? $"{career.CurrentClass} - privatlag (betalt sete)"
                 : contract.IsFreeAgent
                     ? $"{career.CurrentClass} - fri kjøring"
-                    : $"{career.CurrentClass} hos {contract.Manufacturer}   ·   {contract.SeasonsRemaining} sesong(er) igjen   ·   Mål: {contract.GoalDescription}";
+                    : $"{career.CurrentClass} hos {contract.Manufacturer}   ·   {contract.SeasonsRemaining} sesong(er) igjen   ·   Mål: {ContractGoalFormatter.Describe(contract.Goals)}";
 
         var totalSeasons = career.SeasonHistory.Count + (career.CurrentSeason != null ? 1 : 0);
         var totalRaces = career.RaceHistory.Count;
@@ -35,7 +36,9 @@ public partial class DriverProfileWindow : Window
         {
             new("NIVÅ", career.Level.ToString()),
             new("TOTAL XP", career.TotalXp.ToString()),
-            new("RATING", career.DriverRating.ToString()),
+            new("DRIVER RATING", career.DriverRating.ToString()),
+            new("SAFETY RATING", career.SafetyRating.ToString()),
+            new("OVERALL", career.OverallRating.ToString()),
             new("CREDITS", $"{career.Credits} cr"),
             new("SESONGER", totalSeasons.ToString()),
             new("LØP", totalRaces.ToString()),

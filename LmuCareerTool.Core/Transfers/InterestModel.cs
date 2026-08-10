@@ -17,8 +17,7 @@ public static class InterestModel
     public static int ComputeInterest(
         CareerProfile career,
         ManufacturerDefinition manufacturer,
-        SeasonModel? lastSeason,
-        List<CareerRaceEntry> lastSeasonRaces)
+        SeasonModel? lastSeason)
     {
         if (career.DriverRating < manufacturer.RatingRequired - PrestigeGapCutoff)
             return 0; // prestisjegap - de vet du ikke er i nærheten ennå
@@ -44,20 +43,16 @@ public static class InterestModel
             score += 45 * 0.30; // ingen sesong å vurdere ennå - nøytralt
         }
 
-        // Renhet siste sesong (incidents + straffer per løp) - middels faktor.
-        if (lastSeasonRaces.Count > 0)
-        {
-            var avgTrouble = lastSeasonRaces.Average(r => r.IncidentCount + r.PenaltyCount * 2);
-            score += Math.Clamp(100 - avgTrouble * 12, 0, 100) * 0.15;
-        }
-        else
-        {
-            score += 60 * 0.15;
-        }
+        // Renhet - Safety Rating direkte - middels faktor.
+        score += Math.Clamp(career.SafetyRating, 0, 100) * 0.15;
 
         // Lojalitet: liten bonus hvis du allerede kjører for merket.
         if (string.Equals(career.CurrentContract?.Manufacturer, manufacturer.Name, StringComparison.OrdinalIgnoreCase))
             score += 10;
+
+        // Manager: forhandler bedre på dine vegne uansett merke.
+        if (career.HasManager)
+            score += 8;
 
         return (int)Math.Clamp(Math.Round(score), 0, 100);
     }

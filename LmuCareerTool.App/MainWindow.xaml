@@ -40,8 +40,20 @@
                                      Content="{loc:Loc Main_Nav_Championship}" Checked="Nav_Checked" />
                         <RadioButton x:Name="NavHistory" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
                                      Content="{loc:Loc Main_Nav_History}" Checked="Nav_Checked" />
-                        <RadioButton x:Name="NavHelp" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
-                                     Content="{loc:Loc Main_Nav_Help}" Checked="Nav_Checked" />
+
+                        <Border Height="1" Background="{StaticResource BorderColor}" Margin="16,10" />
+
+                        <Button x:Name="TransferMarketButton" Style="{StaticResource NavActionButtonStyle}"
+                                Content="{loc:Loc Main_Nav_TransferMarket}" Click="TransferMarketButton_Click" />
+                        <Button x:Name="AchievementsButton" Style="{StaticResource NavActionButtonStyle}"
+                                Content="{loc:Loc Main_Nav_Achievements}" Click="AchievementsButton_Click" />
+                        <Button x:Name="ShopButton" Style="{StaticResource NavActionButtonStyle}"
+                                Content="{loc:Loc Main_Nav_Staff}" Click="ShopButton_Click" />
+                        <Button x:Name="EventsButton" Style="{StaticResource NavActionButtonStyle}"
+                                Content="{loc:Loc Main_Nav_Events}" Click="EventsButton_Click" />
+
+                        <Border Height="1" Background="{StaticResource BorderColor}" Margin="16,10" />
+
                         <RadioButton x:Name="NavSettings" GroupName="Nav" Style="{StaticResource NavButtonStyle}"
                                      Content="{loc:Loc Main_Nav_Settings}" Checked="Nav_Checked" />
                     </StackPanel>
@@ -104,6 +116,12 @@
                                     <StackPanel>
                                         <TextBlock Text="{loc:Loc Main_Header_Rating}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="RatingText" Text="50" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentBlue}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource StatTileStyle}" Margin="0,0,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="{loc:Loc Main_Header_Safety}" Style="{StaticResource SectionHeaderStyle}" Margin="0" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="SafetyRatingText" Text="70" FontSize="22" FontFamily="Segoe UI Semibold" Foreground="{StaticResource GoodColor}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatTileStyle}">
@@ -226,11 +244,20 @@
                         <Grid x:Name="ChampionshipPanel" Visibility="Collapsed">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" x:Name="ChampionshipSubTitleText" Text="{loc:Loc Main_ChampionshipNoSeason}"
                                        Foreground="{StaticResource MutedTextColor}" Margin="0,0,0,16" />
-                            <Grid Grid.Row="1">
+
+                            <Border Grid.Row="1" x:Name="RivalCard" Style="{StaticResource CardStyle}" Margin="0,0,0,16" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="🎯 RIVAL" Style="{StaticResource SectionHeaderStyle}" />
+                                    <TextBlock x:Name="RivalText" Text="-" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Grid Grid.Row="2">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="3*" />
                                     <ColumnDefinition Width="16" />
@@ -283,7 +310,37 @@
 
                         <!-- HISTORIKK -->
                         <Grid x:Name="HistoryPanel" Visibility="Collapsed">
-                            <Border Style="{StaticResource CardStyle}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" x:Name="PendingSessionsCard" Style="{StaticResource CardStyle}" Margin="0,0,0,16" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="⏳ Uferdige økter" Style="{StaticResource SectionHeaderStyle}" />
+                                    <TextBlock Text="Practice/Qualifying registrert på en bane du ikke har fullført et løp på ennå. Ingen konsekvens for karrieren - fjern hvis du ikke skal fullføre løpet."
+                                               Foreground="{StaticResource MutedTextColor}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                    <ItemsControl x:Name="PendingSessionsList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{StaticResource SurfaceColor}" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding Summary}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                                        <Button Grid.Column="1" Content="Fjern" Padding="12,6" Margin="10,0,0,0"
+                                                                Style="{StaticResource SecondaryButtonStyle}" Click="ClearPendingButton_Click" Tag="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Style="{StaticResource CardStyle}">
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_FullHistory}" Style="{StaticResource SectionHeaderStyle}" />
                                     <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Main_FullHistoryHelp}"
@@ -304,10 +361,49 @@
                             </Border>
                         </Grid>
 
-                        <!-- HJELP -->
-                        <Grid x:Name="HelpPanel" Visibility="Collapsed">
+                        <!-- INNSTILLINGER (inkl. HJELP under) -->
+                        <Grid x:Name="SettingsPanel" Visibility="Collapsed">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                 <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="{loc:Loc Main_Settings_Setup}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="{loc:Loc Main_Settings_ResultsFolder}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
+                                                        <Button Grid.Column="1" Content="{loc:Loc Common_Browse}" Style="{StaticResource SecondaryButtonStyle}"
+                                                                Padding="10,8" Click="BrowseResultsFolderButton_Click" />
+                                                    </Grid>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                                    <TextBlock Text="{loc:Loc Main_Settings_PlayerName}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
+                                                    <TextBox x:Name="PlayerNameBox" />
+                                                </StackPanel>
+                                                <Button x:Name="StartStopButton" Grid.Column="2" Content="{loc:Loc Main_Settings_StartWatching}" VerticalAlignment="Bottom" Click="StartStopButton_Click" />
+                                            </Grid>
+                                            <TextBlock x:Name="StatusText" Text="{loc:Loc Main_Settings_StatusNotStarted}" Foreground="{StaticResource MutedTextColor}" Margin="0,14,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+                                        <StackPanel>
+                                            <TextBlock Text="{loc:Loc Common_LanguageLabel}" Style="{StaticResource SectionHeaderStyle}" />
+                                            <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left" SelectionChanged="LanguageBox_SelectionChanged" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="{loc:Loc Main_Nav_Help}" Style="{StaticResource PageTitleStyle}" Margin="0,10,0,16" />
 
                                     <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
                                         <StackPanel>
@@ -373,52 +469,8 @@
                                                     Style="{StaticResource SecondaryButtonStyle}" Click="CheckInterestButton_Click" />
                                         </StackPanel>
                                     </Border>
-
                                 </StackPanel>
                             </ScrollViewer>
-                        </Grid>
-
-                        <!-- INNSTILLINGER -->
-                        <Grid x:Name="SettingsPanel" Visibility="Collapsed">
-                            <StackPanel VerticalAlignment="Top">
-                                <Border Style="{StaticResource CardStyle}" Margin="0,0,0,16">
-                                    <StackPanel>
-                                        <TextBlock Text="{loc:Loc Main_Settings_Setup}" Style="{StaticResource SectionHeaderStyle}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                                <TextBlock Text="{loc:Loc Main_Settings_ResultsFolder}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBox x:Name="ResultsFolderBox" Grid.Column="0" Margin="0,0,8,0" />
-                                                    <Button Grid.Column="1" Content="{loc:Loc Common_Browse}" Style="{StaticResource SecondaryButtonStyle}"
-                                                            Padding="10,8" Click="BrowseResultsFolderButton_Click" />
-                                                </Grid>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                                                <TextBlock Text="{loc:Loc Main_Settings_PlayerName}" Foreground="{StaticResource MutedTextColor}" FontSize="11" Margin="0,0,0,4" />
-                                                <TextBox x:Name="PlayerNameBox" />
-                                            </StackPanel>
-                                            <Button x:Name="StartStopButton" Grid.Column="2" Content="{loc:Loc Main_Settings_StartWatching}" VerticalAlignment="Bottom" Click="StartStopButton_Click" />
-                                        </Grid>
-                                        <TextBlock x:Name="StatusText" Text="{loc:Loc Main_Settings_StatusNotStarted}" Foreground="{StaticResource MutedTextColor}" Margin="0,14,0,0" />
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource CardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="{loc:Loc Common_LanguageLabel}" Style="{StaticResource SectionHeaderStyle}" />
-                                        <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left" SelectionChanged="LanguageBox_SelectionChanged" />
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
                         </Grid>
                     </Grid>
                 </Grid>

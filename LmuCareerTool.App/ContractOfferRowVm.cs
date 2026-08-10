@@ -21,7 +21,7 @@ public class ContractOfferRowVm
 
         LengthText = offer.IsFreeAgent ? "" : $"{offer.LengthSeasons} sesong{(offer.LengthSeasons != 1 ? "er" : "")}";
         SalaryText = offer.SalaryPerRound > 0 ? $"{offer.SalaryPerRound} cr/runde" : "Ingen lønn";
-        GoalText = offer.GoalDescription;
+        GoalText = ContractGoalFormatter.Describe(offer.Goals);
         ReasoningText = offer.Reasoning;
 
         SignButtonText = offer.SigningCost > 0 ? $"Signer ({offer.SigningCost} cr)" : "Signer";

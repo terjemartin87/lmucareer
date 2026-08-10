@@ -1,5 +1,6 @@
 using LmuCareerTool.Career;
 using LmuCareerTool.Content;
+using LmuCareerTool.Transfers;
 using LmuCareerTool.Watching;
 
 namespace LmuCareerTool.ConsoleApp;
@@ -108,14 +109,14 @@ public static class Program
 
         Console.WriteLine();
         Console.WriteLine($"Karriere lagret til: {Path.GetFullPath(CareerFilePath)}");
-        Console.WriteLine($"Total XP: {_engine.Career.TotalXp}  (Nivå {_engine.Career.Level})  Rating: {_engine.Career.DriverRating}  Credits: {_engine.Career.Credits}");
+        Console.WriteLine($"Total XP: {_engine.Career.TotalXp}  (Nivå {_engine.Career.Level})  Driver: {_engine.Career.DriverRating}  Safety: {_engine.Career.SafetyRating}  Credits: {_engine.Career.Credits}");
     }
 
     private static void RunLive()
     {
         var career = _engine.Career;
         Console.WriteLine("=== LMU Karriere-tool ===");
-        Console.WriteLine($"Fører: {career.DriverName}  (Nivå {career.Level}, {career.TotalXp} XP, Rating {career.DriverRating}, {career.Credits} credits)");
+        Console.WriteLine($"Fører: {career.DriverName}  (Nivå {career.Level}, {career.TotalXp} XP, Driver {career.DriverRating}, Safety {career.SafetyRating}, {career.Credits} credits)");
         Console.WriteLine($"Klasse: {career.CurrentClass}   Merke: {career.CurrentManufacturer ?? "-"}   Opplåste klasser: {string.Join(", ", career.UnlockedClasses)}");
         Console.WriteLine($"Overvåker: {ResultsFolder}");
 
@@ -174,13 +175,13 @@ public static class Program
             return;
         }
 
-        Console.WriteLine($"--- Tilbud i {carClass} (Rating: {_engine.Career.DriverRating}, credits: {_engine.Career.Credits}) ---");
+        Console.WriteLine($"--- Tilbud i {carClass} (Driver: {_engine.Career.DriverRating}, Safety: {_engine.Career.SafetyRating}, credits: {_engine.Career.Credits}) ---");
         for (var i = 0; i < offers.Count; i++)
         {
             var o = offers[i];
             var label = o.IsPrivateerSeat ? "Privatlag" : o.IsFreeAgent ? "Fri kjøring" : o.Manufacturer;
             var badge = o.IsRenewal ? "FORNYELSE" : o.IsPrivateerSeat ? $"BETALT SETE ({o.SigningCost} cr)" : o.IsFreeAgent ? "FRI KLASSE" : $"interesse {o.InterestScore}";
-            Console.WriteLine($"  [{i}] {label,-15} {badge,-22} {o.LengthSeasons} sesong(er)   {o.SalaryPerRound} cr/runde   {o.GoalDescription}");
+            Console.WriteLine($"  [{i}] {label,-15} {badge,-22} {o.LengthSeasons} sesong(er)   {o.SalaryPerRound} cr/runde   {ContractGoalFormatter.Describe(o.Goals)}");
             Console.WriteLine($"       \"{o.Reasoning}\"");
         }
         Console.WriteLine();
@@ -261,11 +262,11 @@ public static class Program
         }
         else
         {
-            Console.WriteLine($"XP: +{outcome.XpEarned}   Poeng: +{outcome.PointsEarned}   Rating: {outcome.RatingDelta:+0;-0;0}   Credits: +{outcome.CreditsEarned}" +
+            Console.WriteLine($"XP: +{outcome.XpEarned}   Poeng: +{outcome.PointsEarned}   Driver: {outcome.RatingDelta:+0;-0;0}   Safety: {outcome.SafetyRatingDelta:+0;-0;0}   Credits: +{outcome.CreditsEarned}" +
                 (outcome.ContractSalaryEarned > 0 ? $"   Kontraktlønn: +{outcome.ContractSalaryEarned}" : ""));
         }
 
-        Console.WriteLine($"Total XP: {_engine.Career.TotalXp} (Nivå {_engine.Career.Level})   Rating: {_engine.Career.DriverRating}   Credits: {_engine.Career.Credits}");
+        Console.WriteLine($"Total XP: {_engine.Career.TotalXp} (Nivå {_engine.Career.Level})   Driver: {_engine.Career.DriverRating}   Safety: {_engine.Career.SafetyRating}   Credits: {_engine.Career.Credits}");
 
         if (outcome.MatchedEvent != null && !outcome.CarMismatch)
             Console.WriteLine($"Sesong:      Runde {outcome.MatchedEvent.RoundNumber} markert som fullført ✔");

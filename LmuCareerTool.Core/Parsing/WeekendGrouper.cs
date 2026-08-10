@@ -27,6 +27,14 @@ public class WeekendGrouper
     /// <summary>Ventende Qualifying-økter per bane, til persistering (PendingWeekendStore).</summary>
     public IReadOnlyDictionary<string, SessionResult> PendingQualifying => _lastQualifyingByTrack;
 
+    /// <summary>Forkaster ventende Practice/Qualifying-data for en bane - til bruk når spilleren
+    /// starter en helg men bestemmer seg for ikke å fullføre løpet.</summary>
+    public void ClearPending(string trackVenue)
+    {
+        _lastPracticeByTrack.Remove(trackVenue);
+        _lastQualifyingByTrack.Remove(trackVenue);
+    }
+
     /// <summary>Gjenoppretter ventende P/Q-økter fra disk, slik at en helg overlever at appen restartes.</summary>
     public void RestoreState(
         IDictionary<string, SessionResult> practice,

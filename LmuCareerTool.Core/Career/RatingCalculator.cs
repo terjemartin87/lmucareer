@@ -3,13 +3,14 @@ using LmuCareerTool.Models;
 namespace LmuCareerTool.Career;
 
 /// <summary>
-/// Driver Rating (0-100) er en langsiktig prestisje-score, separat fra XP.
-/// XP styrer hvilke KLASSER du kan kjøre i; Rating styrer hvilke MERKER som
-/// legger merke til deg innad i klassen du allerede kjører.
+/// Driver Rating og Safety Rating (begge 0-100) er langsiktige prestisje-scorer, separate fra XP.
+/// XP styrer hvilke KLASSER du kan kjøre i. Driver Rating styrer prestasjon relativt til feltet
+/// (finish, posisjon, posisjoner vunnet). Safety Rating styrer renhet (incidents/straffer).
+/// Sammen (snitt) gir de Overall Rating - hvor attraktiv du er for merker.
 /// </summary>
 public static class RatingCalculator
 {
-    public static int CalculateDelta(RaceWeekendResult weekend)
+    public static int CalculateDriverRatingDelta(RaceWeekendResult weekend)
     {
         var race = weekend.RaceResult;
         if (race == null) return 0;
@@ -26,6 +27,19 @@ public static class RatingCalculator
 
         if (weekend.PositionsGainedFromGrid > 0)
             delta += Math.Min(weekend.PositionsGainedFromGrid, 5);
+
+        return Math.Clamp(delta, -10, 10);
+    }
+
+    public static int CalculateSafetyRatingDelta(RaceWeekendResult weekend)
+    {
+        var race = weekend.RaceResult;
+        if (race == null) return 0;
+
+        var delta = 0;
+
+        if (race.IncidentCount == 0 && race.PenaltyCount == 0)
+            delta += 2; // rent løp - liten bonus
 
         delta -= race.IncidentCount;
         delta -= race.PenaltyCount * 2;

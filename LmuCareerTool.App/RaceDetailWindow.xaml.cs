@@ -1,14 +1,24 @@
 using System.Windows;
+using LmuCareerTool.Career;
 using LmuCareerTool.Models;
 
 namespace LmuCareerTool.App;
 
 public partial class RaceDetailWindow : Window
 {
-    public RaceDetailWindow(CareerRaceEntry entry)
+    private readonly CareerEngine _engine;
+    private readonly CareerRaceEntry _entry;
+
+    /// <summary>Satt til true hvis brukeren slettet løpet - MainWindow bruker dette til å
+    /// oppdatere header/sesong/mesterskap etter at vinduet lukkes.</summary>
+    public bool WasDeleted { get; private set; }
+
+    public RaceDetailWindow(CareerEngine engine, CareerRaceEntry entry)
     {
         InitializeComponent();
         DarkTitleBarHelper.Apply(this);
+        _engine = engine;
+        _entry = entry;
 
         TrackText.Text = entry.TrackVenue;
         var roundText = entry.RoundNumber.HasValue ? $"Runde {entry.RoundNumber} - " : "";
@@ -35,6 +45,23 @@ public partial class RaceDetailWindow : Window
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void DeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(this,
+            "Dette fjerner løpet fra historikken og reverserer XP, poeng, Driver/Safety Rating og credits det ga. " +
+            "Hvis dette var en runde i den pågående sesongen, nullstilles runden slik at du kan kjøre den på nytt. " +
+            "Prestasjoner og klasser du allerede har låst opp beholdes. Vil du fortsette?",
+            "Slett løp", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        if (_engine.DeleteRaceHistoryEntry(_entry))
+        {
+            WasDeleted = true;
+            Close();
+        }
+    }
 
     private static string FormatTime(double? seconds)
     {

@@ -40,6 +40,14 @@
             </StackPanel>
         </Border>
 
-        <Button Grid.Row="4" Content="Lukk" HorizontalAlignment="Right" Padding="20,10" Style="{StaticResource SecondaryButtonStyle}" Click="CloseButton_Click" />
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="Slett løp" HorizontalAlignment="Left" Padding="20,10"
+                    Style="{StaticResource SecondaryButtonStyle}" Foreground="{StaticResource DangerColor}" Click="DeleteButton_Click" />
+            <Button Grid.Column="1" Content="Lukk" HorizontalAlignment="Right" Padding="20,10" Style="{StaticResource SecondaryButtonStyle}" Click="CloseButton_Click" />
+        </Grid>
     </Grid>
 </Window>

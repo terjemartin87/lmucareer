@@ -40,6 +40,7 @@ public partial class MiniWidgetWindow : Window
         }
 
         RatingText.Text = career.DriverRating.ToString();
+        SafetyRatingText.Text = career.SafetyRating.ToString();
         CreditsText.Text = $"{career.Credits} cr";
     }
 }

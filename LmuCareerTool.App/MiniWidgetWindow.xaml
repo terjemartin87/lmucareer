@@ -1,7 +1,7 @@
 <Window x:Class="LmuCareerTool.App.MiniWidgetWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Neste løp" Width="320" SizeToContent="Height"
+        Title="Neste løp" Width="380" SizeToContent="Height"
         Background="{StaticResource BgColor}"
         WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False"
         WindowStartupLocation="Manual">
@@ -22,6 +22,12 @@
                     <StackPanel>
                         <TextBlock Text="RATING" FontSize="10" Foreground="{StaticResource MutedTextColor}" />
                         <TextBlock x:Name="RatingText" Text="-" FontSize="16" FontFamily="Segoe UI Semibold" Foreground="{StaticResource AccentBlue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTileStyle}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="SIKKERHET" FontSize="10" Foreground="{StaticResource MutedTextColor}" />
+                        <TextBlock x:Name="SafetyRatingText" Text="-" FontSize="16" FontFamily="Segoe UI Semibold" Foreground="{StaticResource GoodColor}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource StatTileStyle}">

@@ -53,5 +53,50 @@
     "Heavy Rain (dynamic)",
     "Dynamic (full weather slots on)"
   ],
+  "specialEvents": [
+    { "id": "laguna_2h", "name": "2-Hour Sprint - Laguna Seca", "trackVenue": "WeatherTech Raceway Laguna Seca", "durationMinutes": 120, "entryFeeCredits": 600 },
+    { "id": "bahrain_8h", "name": "8 Hours of Bahrain", "trackVenue": "Bahrain International Circuit", "durationMinutes": 480, "entryFeeCredits": 2500 },
+    { "id": "spa_6h", "name": "6 Hours of Spa-Francorchamps", "trackVenue": "Circuit de Spa-Francorchamps", "durationMinutes": 360, "entryFeeCredits": 1800 },
+    { "id": "fuji_6h", "name": "6 Hours of Fuji", "trackVenue": "Fuji Speedway", "durationMinutes": 360, "entryFeeCredits": 1800 },
+    { "id": "imola_6h", "name": "6 Hours of Imola", "trackVenue": "Autodromo Enzo e Dino Ferrari", "durationMinutes": 360, "entryFeeCredits": 1800 },
+    { "id": "daytona_24h", "name": "Rolex 24 at Daytona", "trackVenue": "Daytona International Speedway", "durationMinutes": 1440, "entryFeeCredits": 5500 },
+    { "id": "spa_24h", "name": "24 Hours of Spa", "trackVenue": "Circuit de Spa-Francorchamps", "durationMinutes": 1440, "entryFeeCredits": 5000 },
+    { "id": "le_mans_24h", "name": "24 Hours of Le Mans", "trackVenue": "Circuit de la Sarthe", "durationMinutes": 1440, "entryFeeCredits": 6000 }
+  ],
+  "shopItems": [
+    { "id": "short_coaching", "name": "Kortkurs", "description": "En helgesamling med en profesjonell coach. +3 Driver Rating.", "icon": "🎓", "cost": 800, "effect": "DriverRatingBoost", "effectValue": 3, "repeatable": true },
+    { "id": "intensive_training", "name": "Intensivtrening", "description": "Ukelang intensivtrening med simulator og fysisk trening. +8 Driver Rating.", "icon": "🏋️", "cost": 2000, "effect": "DriverRatingBoost", "effectValue": 8, "repeatable": true },
+    { "id": "safety_course", "name": "Sikkerhetskurs", "description": "Kurs i ren, forutsigbar kjøring. +5 Safety Rating.", "icon": "🦺", "cost": 1000, "effect": "SafetyRatingBoost", "effectValue": 5, "repeatable": true },
+    { "id": "personal_trainer", "name": "Personlig kjøreinstruktør", "description": "Tett oppfølging over tid gir varig bedre vaner på banen. +12 Safety Rating.", "icon": "🧑‍🏫", "cost": 2500, "effect": "SafetyRatingBoost", "effectValue": 12, "repeatable": true },
+    { "id": "training_camp", "name": "Treningsleir", "description": "Ekstra treningstimer gir raskere fremgang. +300 XP.", "icon": "📘", "cost": 1500, "effect": "XpBoost", "effectValue": 300, "repeatable": true },
+    { "id": "hire_manager", "name": "Ansett en manager", "description": "En fast manager forhandler bedre på dine vegne: høyere interesse hos alle merker, billigere privatlag-seter og lavere bruddsummer. Engangskostnad, varer resten av karrieren.", "icon": "🤝", "cost": 5000, "effect": "HireManager", "effectValue": 0, "repeatable": false }
+  ],
+  "achievements": [
+    { "id": "first_podium", "name": "Første pallplass", "description": "Fullfør et løp på pallen (topp 3).", "icon": "🥉", "metric": "TotalPodiums", "threshold": 1 },
+    { "id": "first_win", "name": "Første seier", "description": "Vinn ditt første løp.", "icon": "🏆", "metric": "TotalWins", "threshold": 1 },
+    { "id": "first_pole", "name": "Første pole", "description": "Kvalifiser på førsteplass.", "icon": "🎯", "metric": "TotalPoles", "threshold": 1 },
+    { "id": "five_wins", "name": "Seriesvinner", "description": "Vinn 5 løp.", "icon": "🏁", "metric": "TotalWins", "threshold": 5 },
+    { "id": "ten_wins", "name": "Dominant", "description": "Vinn 10 løp.", "icon": "👑", "metric": "TotalWins", "threshold": 10 },
+    { "id": "ten_podiums", "name": "Fast gjest på pallen", "description": "Fullfør 10 løp på pallen.", "icon": "🎖️", "metric": "TotalPodiums", "threshold": 10 },
+    { "id": "clean_ten", "name": "Ren fører", "description": "Fullfør 10 løp helt uten incidents eller straffer.", "icon": "🧼", "metric": "TotalCleanRaces", "threshold": 10 },
+    { "id": "clean_fifty", "name": "Mønsterfører", "description": "Fullfør 50 løp helt uten incidents eller straffer.", "icon": "✨", "metric": "TotalCleanRaces", "threshold": 50 },
+    { "id": "hundred_races", "name": "Veteran på banen", "description": "Fullfør 100 løp.", "icon": "🏎️", "metric": "TotalRacesFinished", "threshold": 100 },
+    { "id": "elite_driver_rating", "name": "Eliteklasse", "description": "Nå en Driver Rating på 90.", "icon": "⭐", "metric": "DriverRating", "threshold": 90 },
+    { "id": "elite_safety_rating", "name": "Mønsterborger", "description": "Nå en Safety Rating på 90.", "icon": "🛡️", "metric": "SafetyRating", "threshold": 90 },
+    { "id": "five_seasons", "name": "Langtidskontrakt", "description": "Fullfør 5 sesonger.", "icon": "📅", "metric": "SeasonsCompleted", "threshold": 5 },
+    { "id": "three_classes", "name": "Multiklasse-mester", "description": "Lås opp 3 forskjellige klasser.", "icon": "🔓", "metric": "ClassesUnlocked", "threshold": 3 },
+    { "id": "distance_5000", "name": "Langdistanse", "description": "Kjør 5000 km sammenlagt i karrieren.", "icon": "🛣️", "metric": "TotalDistanceKm", "threshold": 5000 },
+    { "id": "xp_10000", "name": "Erfaren racer", "description": "Nå 10 000 total XP.", "icon": "📈", "metric": "TotalXp", "threshold": 10000 },
+    { "id": "first_special_event", "name": "Klassiker fullført", "description": "Fullfør ditt første spesialarrangement.", "icon": "🏆", "metric": "SpecialEventsCompleted", "threshold": 1 },
+    { "id": "three_special_events", "name": "Enduranceveteran", "description": "Fullfør 3 spesialarrangementer.", "icon": "🌙", "metric": "SpecialEventsCompleted", "threshold": 3 },
+    { "id": "conquered_laguna_2h", "name": "Sprint-mester", "description": "Fullfør 2-Hour Sprint på Laguna Seca.", "icon": "🏁", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "laguna_2h" },
+    { "id": "conquered_bahrain_8h", "name": "8 timer i ørkenen", "description": "Fullfør 8 Hours of Bahrain.", "icon": "🏜️", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "bahrain_8h" },
+    { "id": "conquered_spa_6h", "name": "6 timer i Ardennene", "description": "Fullfør 6 Hours of Spa-Francorchamps.", "icon": "🌲", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "spa_6h" },
+    { "id": "conquered_fuji_6h", "name": "6 timer ved Fuji", "description": "Fullfør 6 Hours of Fuji.", "icon": "🗻", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "fuji_6h" },
+    { "id": "conquered_imola_6h", "name": "6 timer i Imola", "description": "Fullfør 6 Hours of Imola.", "icon": "🇮🇹", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "imola_6h" },
+    { "id": "conquered_daytona_24h", "name": "Rolex 24 fullført", "description": "Fullfør Rolex 24 at Daytona.", "icon": "🌙", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "daytona_24h" },
+    { "id": "conquered_spa_24h", "name": "24 timer i Spa overlevd", "description": "Fullfør 24 Hours of Spa.", "icon": "🌙", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "spa_24h" },
+    { "id": "conquered_le_mans_24h", "name": "Le Mans-legende", "description": "Fullfør 24 Hours of Le Mans - den ultimate enduranceklassikeren.", "icon": "👑", "metric": "SpecificSpecialEvent", "threshold": 0, "requiredEventId": "le_mans_24h" }
+  ],
   "_comment": "Alle bil- og banenavn her er verifisert mot ekte resultatfiler 8. august 2026 (se README Vedlegg A). LMP2/LMP3 ('_verified': false) er fortsatt uverifiserte gjetninger - kjør en økt i den klassen og kjør 'dotnet run --project LmuCareerTool.Console -- validate' for å bekrefte riktig skrivemåte før du stoler på dem. Samme kommando avdekker enhver ny bane/bil spillet introduserer senere. ratingRequired/unlockCost kan justeres fritt for å endre vanskelighetsgrad på overgangene."
 }

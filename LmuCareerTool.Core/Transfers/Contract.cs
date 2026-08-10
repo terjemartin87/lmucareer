@@ -14,8 +14,8 @@ public class Contract
     public int SeasonsRemaining { get; set; }
     public int SalaryPerRound { get; set; }
 
-    public int GoalTargetPosition { get; set; }
-    public string GoalDescription { get; set; } = "";
+    /// <summary>Alle krav som må innfris for at merket skal fornye deg neste sesong (tom liste = ingen krav).</summary>
+    public List<ContractGoal> Goals { get; set; } = new();
 
     public int SignedInSeasonNumber { get; set; }
 

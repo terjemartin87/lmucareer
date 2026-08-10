@@ -16,7 +16,7 @@ public partial class ManufacturerInterestWindow : Window
         DarkTitleBarHelper.Apply(this);
 
         var carClass = engine.Career.CurrentClass;
-        SubTitleText.Text = $"Klasse: {carClass}   ·   Rating: {engine.Career.DriverRating}   ·   Credits: {engine.Career.Credits}";
+        SubTitleText.Text = $"Klasse: {carClass}   ·   Driver: {engine.Career.DriverRating}   ·   Safety: {engine.Career.SafetyRating}   ·   Credits: {engine.Career.Credits}";
 
         var offers = engine.GetContractOffers(carClass);
         if (offers.Count == 0)

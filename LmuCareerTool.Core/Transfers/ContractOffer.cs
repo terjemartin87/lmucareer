@@ -13,8 +13,7 @@ public class ContractOffer
     public int LengthSeasons { get; set; }
     public int SalaryPerRound { get; set; }
 
-    public int GoalTargetPosition { get; set; }
-    public string GoalDescription { get; set; } = "";
+    public List<ContractGoal> Goals { get; set; } = new();
 
     public string Reasoning { get; set; } = "";
 
