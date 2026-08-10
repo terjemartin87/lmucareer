@@ -24,9 +24,8 @@
             <!-- ===== VENSTRE NAVIGASJON ===== -->
             <Border Grid.Column="0" Background="{StaticResource NavColor}">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Margin="20,24,20,28">
-                        <TextBlock Text="{loc:Loc Main_LogoLine1}" FontSize="20" FontFamily="Segoe UI Semibold" />
-                        <TextBlock Text="{loc:Loc Main_LogoLine2}" FontSize="12" Foreground="{StaticResource AccentColor}" FontFamily="Segoe UI Semibold" Margin="0,-2,0,0" />
+                    <StackPanel DockPanel.Dock="Top" Margin="20,20,20,20" HorizontalAlignment="Center">
+                        <Image Source="/Assets/logo.png" Width="120" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
                     </StackPanel>
 
                     <TextBlock DockPanel.Dock="Bottom" x:Name="VersionText" Text="v0.6" Foreground="{StaticResource DisabledTextColor}"

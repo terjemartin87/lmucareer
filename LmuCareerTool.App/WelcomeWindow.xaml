@@ -14,12 +14,12 @@
         <Border Grid.Row="0" Background="{StaticResource StripeBrush}" />
 
         <StackPanel Grid.Row="1" Margin="40,36,40,40">
-            <Image Source="/Assets/app-icon-512.png" Width="92" Height="92" HorizontalAlignment="Center" Margin="0,0,0,18">
+            <Image Source="/Assets/logo.png" Width="160" HorizontalAlignment="Center" Margin="0,0,0,10" Stretch="Uniform"
+                   RenderOptions.BitmapScalingMode="HighQuality">
                 <Image.Effect>
                     <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.4" Color="Black" />
                 </Image.Effect>
             </Image>
-            <TextBlock Text="{loc:Loc ModeSelect_Wordmark}" FontSize="28" FontFamily="Segoe UI Semibold" HorizontalAlignment="Center" />
             <TextBlock Text="{loc:Loc ModeSelect_Quote}" FontStyle="Italic"
                        Foreground="{StaticResource MutedTextColor}" HorizontalAlignment="Center" Margin="0,4,0,8" />
 
